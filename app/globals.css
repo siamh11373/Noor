@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-50: 253 249 242;
+    --brand-100: 250 240 220;
+    --brand-200: 240 217 168;
+    --brand-300: 224 188 112;
+    --brand-400: 196 144 58;
+    --brand-500: 168 112 40;
+    --brand-600: 138 84 24;
+    --brand-700: 107 62 16;
+    --brand-800: 78 44 10;
+    --brand-900: 52 28 6;
+
+    --faith: 76 175 80;
+    --faith-light: 241 248 242;
+    --faith-border: 165 214 167;
+    --faith-text: 46 125 50;
+
+    --tasks: 61 111 191;
+    --tasks-light: 237 242 251;
+    --tasks-border: 187 207 240;
+    --tasks-text: 26 79 160;
+
+    --fitness: 230 81 0;
+    --fitness-light: 255 243 224;
+    --fitness-border: 255 204 188;
+    --fitness-text: 191 54 12;
+
+    --family: 156 39 176;
+    --family-light: 243 229 245;
+    --family-border: 206 147 216;
+    --family-text: 106 27 154;
+
+    --surface-bg: 247 247 245;
+    --surface-card: 255 255 255;
+    --surface-raised: 250 250 248;
+    --surface-border: 235 235 235;
+    --surface-muted: 245 245 243;
+
+    --ink-primary: 26 26 26;
+    --ink-secondary: 61 61 61;
+    --ink-muted: 107 107 107;
+    --ink-faint: 155 155 155;
+    --ink-ghost: 176 176 168;
+
+    --ring-track: rgb(240 239 235);
+    --chart-brand: rgb(var(--brand-400));
+    --chart-success: rgb(129 199 132);
+    --chart-track: rgb(240 239 235);
+    --chart-muted-strong: rgb(213 206 194);
+    --trend-bar: rgb(224 213 197);
+    --fitness-bar-soft: rgb(255 204 188);
+    --scrollbar-thumb: 213 213 207;
+    --scrollbar-thumb-hover: 176 176 168;
+  }
+
+  .dark {
+    --brand-50: 43 36 24;
+    --brand-100: 61 48 27;
+    --brand-200: 102 76 31;
+    --brand-300: 150 112 42;
+    --brand-400: 214 170 95;
+    --brand-500: 196 144 58;
+    --brand-600: 168 112 40;
+    --brand-700: 138 84 24;
+    --brand-800: 107 62 16;
+    --brand-900: 78 44 10;
+
+    --faith: 82 196 87;
+    --faith-light: 24 45 30;
+    --faith-border: 61 111 69;
+    --faith-text: 128 212 136;
+
+    --tasks: 95 133 214;
+    --tasks-light: 24 33 52;
+    --tasks-border: 69 99 155;
+    --tasks-text: 133 170 240;
+
+    --fitness: 255 126 59;
+    --fitness-light: 52 32 20;
+    --fitness-border: 140 84 58;
+    --fitness-text: 255 171 122;
+
+    --family: 200 104 229;
+    --family-light: 45 28 56;
+    --family-border: 104 60 126;
+    --family-text: 233 173 255;
+
+    --surface-bg: 14 18 22;
+    --surface-card: 20 26 32;
+    --surface-raised: 27 34 41;
+    --surface-border: 50 60 69;
+    --surface-muted: 33 41 48;
+
+    --ink-primary: 236 240 243;
+    --ink-secondary: 194 202 208;
+    --ink-muted: 145 156 166;
+    --ink-faint: 112 123 134;
+    --ink-ghost: 89 98 108;
+
+    --ring-track: rgb(44 52 59);
+    --chart-brand: rgb(var(--brand-400));
+    --chart-success: rgb(82 196 87);
+    --chart-track: rgb(44 52 59);
+    --chart-muted-strong: rgb(84 74 61);
+    --trend-bar: rgb(94 80 61);
+    --fitness-bar-soft: rgb(140 84 58);
+    --scrollbar-thumb: 67 78 87;
+    --scrollbar-thumb-hover: 104 117 128;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--surface-bg));
+    color: rgb(var(--ink-primary));
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  /* Scrollbar — subtle, consistent */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--scrollbar-thumb)); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--scrollbar-thumb-hover)); }
+}
+
+@layer components {
+  /* Card base */
+  .card {
+    @apply bg-surface-card rounded-card border border-surface-border shadow-card;
+  }
+
+  /* Input base */
+  .input-base {
+    @apply w-full bg-surface-raised border border-surface-border rounded-lg
+           px-3 py-2 text-sm text-ink-primary placeholder:text-ink-ghost
+           outline-none transition-colors
+           focus:border-brand-400 focus:ring-1 focus:ring-brand-400/20;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply bg-brand-400 text-white text-sm font-medium px-4 py-2 rounded-lg
+           border border-brand-400 cursor-pointer transition-all
+           hover:bg-brand-500 active:scale-[.98];
+  }
+  .btn-secondary {
+    @apply bg-surface-card text-ink-secondary text-sm font-medium px-4 py-2 rounded-lg
+           border border-surface-border cursor-pointer transition-all
+           hover:border-brand-400 hover:text-brand-400 active:scale-[.98];
+  }
+  .btn-ghost {
+    @apply bg-transparent text-ink-muted text-sm px-3 py-2 rounded-lg
+           cursor-pointer transition-all
+           hover:bg-surface-muted hover:text-ink-secondary active:scale-[.98];
+  }
+
+  /* Nav pill */
+  .nav-pill {
+    @apply px-3 py-1.5 rounded-md text-sm text-ink-muted cursor-pointer transition-all;
+  }
+  .nav-pill-active {
+    @apply font-medium;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-surface-raised border border-surface-border rounded-xl p-3 text-center;
+  }
+
+  /* Progress bar track */
+  .progress-track {
+    @apply h-1.5 bg-surface-border rounded-full overflow-hidden;
+  }
+
+  /* Auth dark-mode input overrides */
+  .auth-dark-inputs .input-base {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .auth-dark-inputs .input-base::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+  .auth-dark-inputs .input-base:focus {
+    border-color: rgb(196, 144, 58);
+    box-shadow: 0 0 0 1px rgba(196, 144, 58, 0.2);
+  }
+  .auth-dark-inputs label {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+  .auth-dark-inputs .btn-primary {
+    @apply bg-[rgb(196,144,58)] border-[rgb(196,144,58)] hover:bg-[rgb(214,170,95)];
+  }
+  .auth-dark-inputs .text-ink-secondary,
+  .auth-dark-inputs .text-ink-ghost {
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .auth-dark-inputs .text-ink-primary {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .auth-dark-inputs .bg-surface-raised {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .auth-dark-inputs .border-surface-border {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .auth-dark-inputs .border-fitness\/20 {
+    border-color: rgba(255, 126, 59, 0.2);
+  }
+  .auth-dark-inputs .bg-fitness-light\/50 {
+    background: rgba(52, 32, 20, 0.5);
+  }
+  .auth-dark-inputs .text-fitness-text {
+    color: rgb(255, 171, 122);
+  }
+}
