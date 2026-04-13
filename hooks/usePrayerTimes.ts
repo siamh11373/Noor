@@ -46,9 +46,11 @@ export function usePrayerTimes() {
     try {
       const raw = await computePrayerTimes(lat, lng, settings.madhab, settings.calcMethod)
       setPrayerTimes(buildPrayerTimes(raw))
-    } catch (e) {
+    } catch {
+      // SECURITY FIX: removed console.error(e) — logging the raw error object in the browser
+      // console can expose internal library details or stack traces to end users.
+      // The user-facing message below is sufficient.
       setError('Could not calculate prayer times')
-      console.error(e)
     } finally {
       setLoading(false)
     }

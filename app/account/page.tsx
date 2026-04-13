@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { DashboardPanel, PageHero } from '@/components/ui'
 import { useAuth } from '@/components/providers/AuthProvider'
 
+// SECURITY FIX: enforce a maximum display name length to prevent oversized data in the database
+const DISPLAY_NAME_MAX_LENGTH = 100
+
 export default function AccountPage() {
   const { client, profile, user, refreshProfile } = useAuth()
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
@@ -23,17 +26,26 @@ export default function AccountPage() {
       return
     }
 
+    // SECURITY FIX: validate display name length before writing to the database
+    const trimmed = displayName.trim() || null
+    if (trimmed && trimmed.length > DISPLAY_NAME_MAX_LENGTH) {
+      setError(`Display name must be ${DISPLAY_NAME_MAX_LENGTH} characters or fewer.`)
+      return
+    }
+
     setSaving(true)
     setError('')
     setMessage('')
 
     const { error: updateError } = await client
       .from('profiles')
-      .update({ display_name: displayName.trim() || null })
+      .update({ display_name: trimmed })
       .eq('id', user.id)
 
     if (updateError) {
-      setError(updateError.message)
+      // SECURITY FIX: show generic error instead of raw Supabase error message to avoid
+      // leaking database internals or constraint names to the client
+      setError('Could not save changes. Please try again.')
       setSaving(false)
       return
     }
@@ -74,6 +86,7 @@ export default function AccountPage() {
               onChange={event => setDisplayName(event.target.value)}
               className="input-base"
               placeholder="Your name"
+              maxLength={DISPLAY_NAME_MAX_LENGTH}
             />
           </div>
 

@@ -23,6 +23,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# SECURITY FIX: ignore all log files — logs may contain stack traces, request details,
+# or other sensitive runtime information that should never be committed to version control
+*.log
+logs/
+
 # local env files
 .env*.local
 .env

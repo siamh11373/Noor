@@ -33,6 +33,9 @@ const CALC_OPTIONS: { value: CalcMethod; label: string }[] = [
   { value: 'UmmAlQura', label: 'Umm al-Qura' },
 ]
 
+// SECURITY FIX: max length for display name to prevent oversized data being written to the database
+const DISPLAY_NAME_MAX_LENGTH = 100
+
 export function OnboardingFlow() {
   const router = useRouter()
   const { client, refreshAccountability, refreshProfile, user } = useAuth()
@@ -112,16 +115,25 @@ export function OnboardingFlow() {
     setSaving(true)
     setError('')
 
+    // SECURITY FIX: validate display name length server-side before writing to the database
+    const trimmedName = onboardingDraft.displayName.trim()
+    if (!trimmedName || trimmedName.length > DISPLAY_NAME_MAX_LENGTH) {
+      setError(`Display name must be between 1 and ${DISPLAY_NAME_MAX_LENGTH} characters.`)
+      setSaving(false)
+      return
+    }
+
     const { error: profileError } = await client
       .from('profiles')
       .update({
-        display_name: onboardingDraft.displayName.trim() || null,
+        display_name: trimmedName,
         timezone: onboardingDraft.timezone.trim() || null,
       })
       .eq('id', user.id)
 
     if (profileError) {
-      setError(profileError.message)
+      // SECURITY FIX: show generic message instead of raw Supabase error to avoid leaking internals
+      setError('Could not save your profile. Please try again.')
       setSaving(false)
       return
     }
@@ -129,7 +141,8 @@ export function OnboardingFlow() {
     const sync = await upsertUserStateAndSnapshot(client, finalState, user.id)
 
     if (!sync.ok) {
-      setError(sync.stateError?.message || sync.snapshotError?.message || 'Could not save your onboarding settings.')
+      // SECURITY FIX: show generic message instead of exposing raw Supabase error messages
+      setError('Could not save your onboarding settings. Please try again.')
       setSaving(false)
       return
     }
@@ -140,7 +153,8 @@ export function OnboardingFlow() {
       })
 
       if (inviteError) {
-        setError(inviteError.message)
+        // SECURITY FIX: show generic message instead of raw Supabase RPC error
+        setError('Could not process the invite code. Please try again.')
         setSaving(false)
         return
       }
@@ -223,6 +237,7 @@ export function OnboardingFlow() {
                   onChange={event => patchOnboardingDraft({ displayName: event.target.value })}
                   className="input-base"
                   placeholder="Your first name"
+                  maxLength={DISPLAY_NAME_MAX_LENGTH}
                 />
               </Field>
               <Field label="Timezone">

@@ -3,7 +3,7 @@ import { LandingPage } from '@/components/public/LandingPage'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export default async function RootPage() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   if (!supabase) {
     return <LandingPage />

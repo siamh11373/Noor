@@ -18,8 +18,10 @@ import type { Database } from '@/lib/supabase/database'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { upsertUserStateAndSnapshot } from '@/lib/supabase/state-sync'
 import {
+  clearLocalStateCache,
   createDefaultDataState,
   hasHandledLegacyImport,
+  LEGACY_STORAGE_KEY,
   markLegacyImportHandled,
   normalizeSerializedState,
   readLegacyPersistedState,
@@ -336,6 +338,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     await client.auth.signOut()
+    // SECURITY FIX: clear all cached user state from localStorage on sign out.
+    // Without this, sensitive prayer/fitness/family data persists on shared or public devices
+    // and is accessible to the next person who opens the browser.
+    clearLocalStateCache()
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+    }
     resetStore()
     setPendingImportState(null)
     setSession(null)

@@ -7,7 +7,7 @@ import { AuthShell } from '@/components/auth/AuthShell'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { getSiteUrl } from '@/lib/supabase/env'
 import { useSalahStore } from '@/lib/store'
-import { cn } from '@/lib/utils'
+import { cn, isSafeRedirect } from '@/lib/utils'
 
 function messageForKey(key: string | null) {
   switch (key) {
@@ -35,7 +35,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const [info, setInfo] = useState('')
   const [error, setError] = useState('')
 
-  const next = searchParams.get('next') || '/faith'
+  // SECURITY FIX: validate the 'next' redirect parameter to prevent open redirect attacks.
+  // An attacker could craft ?next=//evil.com which would pass a bare startsWith('/') check.
+  const rawNext = searchParams.get('next')
+  const next = isSafeRedirect(rawNext) ? rawNext : '/faith'
+
   const routeMessage = messageForKey(searchParams.get('message'))
   const submitLabel = mode === 'login' ? 'Sign in' : 'Create account'
   const heading = mode === 'login' ? "Welcome back, let's bring noor into your week" : 'Create your Noor account'
@@ -91,7 +95,9 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
           return
         }
 
-        setError(signInError.message)
+        // SECURITY FIX: show a generic error instead of the raw Supabase message to avoid
+        // leaking internal error details or account-existence information to the client
+        setError('Invalid email or password.')
         setSubmitting(false)
         return
       }
@@ -117,7 +123,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
     })
 
     if (signUpError) {
-      setError(signUpError.message)
+      // SECURITY FIX: show generic message to prevent revealing whether an email is already registered
+      setError('Could not create your account. If you already have an account, try signing in.')
       setSubmitting(false)
       return
     }
@@ -192,8 +199,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
               value={password}
               onChange={event => setPassword(event.target.value)}
               className="input-base"
-              placeholder="At least 8 characters"
-              minLength={8}
+              placeholder="At least 12 characters"
+              minLength={12}
               required
             />
           </div>
@@ -208,7 +215,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
                 onChange={event => setConfirmPassword(event.target.value)}
                 className="input-base"
                 placeholder="Re-enter password"
-                minLength={8}
+                minLength={12}
                 required
               />
             </div>

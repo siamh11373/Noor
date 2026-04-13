@@ -6,6 +6,30 @@ const AUTH_ROUTES = ['/login', '/signup', '/verify-email', '/reset-password', '/
 const ONBOARDING_ROUTES = ['/onboarding']
 const PRIVATE_ROUTES = ['/faith', '/tasks', '/fitness', '/family', '/account']
 
+// SECURITY FIX: simple in-memory rate limiter for authentication endpoints.
+// Limits each IP to 10 requests per minute on auth routes to slow brute-force and enumeration attacks.
+// Note: state is per-instance; upgrade to Upstash Redis for multi-instance/serverless deployments.
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_MS = 60_000
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitStore.get(key)
+
+  if (!entry || entry.resetAt <= now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return true
+  }
+
+  entry.count++
+  return false
+}
+
 function isRouteMatch(pathname: string, routes: string[]) {
   return routes.some(route => pathname === route || pathname.startsWith(`${route}/`))
 }
@@ -48,6 +72,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SECURITY FIX: apply rate limiting to all authentication-related routes before any other processing.
+  // Uses x-forwarded-for (set by Vercel/proxies) with a fallback to x-real-ip.
+  if (isRouteMatch(pathname, AUTH_ROUTES)) {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      'unknown'
+    if (isRateLimited(`${pathname}:${ip}`)) {
+      return new NextResponse('Too Many Requests', {
+        status: 429,
+        headers: { 'Retry-After': '60', 'Content-Type': 'text/plain' },
+      })
+    }
+  }
+
   if (pathname === '/auth/callback') {
     const { response } = await updateSupabaseSession(request)
     return response
@@ -81,18 +120,18 @@ export async function middleware(request: NextRequest) {
 
   if (!verified) {
     if (pathname === '/') {
+      // SECURITY FIX: removed ?email= query parameter from the redirect URL.
+      // Previously the user's email was appended to the URL, exposing it in server access logs
+      // and browser history. VerifyEmailClient falls back to user?.email from the auth context.
       return copySupabaseCookies(
         response,
-        NextResponse.redirect(new URL(`/verify-email?email=${encodeURIComponent(user.email ?? '')}`, request.url))
+        NextResponse.redirect(new URL('/verify-email', request.url))
       )
     }
 
     if (!authRoute) {
-      const url = new URL('/verify-email', request.url)
-      if (user.email) {
-        url.searchParams.set('email', user.email)
-      }
-      return copySupabaseCookies(response, NextResponse.redirect(url))
+      // SECURITY FIX: removed ?email= query parameter (same reason as above).
+      return copySupabaseCookies(response, NextResponse.redirect(new URL('/verify-email', request.url)))
     }
 
     return response

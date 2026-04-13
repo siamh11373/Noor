@@ -34,17 +34,14 @@ export default function ResetPasswordPage() {
     const callbackUrl = new URL('/auth/callback', getSiteUrl())
     callbackUrl.searchParams.set('next', '/reset-password')
 
-    const { error: resetError } = await client.auth.resetPasswordForEmail(email, {
+    // Fire-and-forget the Supabase call; do not branch on the result.
+    // SECURITY FIX: always show the same success message regardless of whether the email
+    // is registered — revealing a "user not found" error allows account enumeration.
+    await client.auth.resetPasswordForEmail(email, {
       redirectTo: callbackUrl.toString(),
     })
 
-    if (resetError) {
-      setError(resetError.message)
-      setSubmitting(false)
-      return
-    }
-
-    setMessage('Password reset email sent. Open the link in your inbox to set a new password.')
+    setMessage('If an account exists for that email, a reset link is on its way. Check your inbox.')
     setSubmitting(false)
   }
 
@@ -56,8 +53,9 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (password.length < 8) {
-      setError('Use at least 8 characters.')
+    // SECURITY FIX: increased minimum password length from 8 to 12 characters
+    if (password.length < 12) {
+      setError('Use at least 12 characters.')
       return
     }
 
@@ -73,7 +71,8 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await client.auth.updateUser({ password })
 
     if (updateError) {
-      setError(updateError.message)
+      // SECURITY FIX: show generic message instead of raw Supabase error to avoid leaking internals
+      setError('Could not update your password. Please try again.')
       setSubmitting(false)
       return
     }
@@ -117,8 +116,8 @@ export default function ResetPasswordPage() {
             value={password}
             onChange={event => setPassword(event.target.value)}
             className="input-base"
-            placeholder="New password"
-            minLength={8}
+            placeholder="New password (at least 12 characters)"
+            minLength={12}
             required
           />
           <input
@@ -127,7 +126,7 @@ export default function ResetPasswordPage() {
             onChange={event => setConfirmPassword(event.target.value)}
             className="input-base"
             placeholder="Confirm new password"
-            minLength={8}
+            minLength={12}
             required
           />
           <button type="submit" className="btn-primary w-full justify-center py-3" disabled={submitting || !isConfigured}>

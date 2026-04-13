@@ -9,8 +9,8 @@ type CookieAdapter = {
   setAll?: (cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[]) => void
 }
 
-function defaultCookieAdapter(): CookieAdapter {
-  const cookieStore = cookies()
+async function getDefaultCookieAdapter(): Promise<CookieAdapter> {
+  const cookieStore = await cookies()
 
   return {
     getAll() {
@@ -28,17 +28,21 @@ function defaultCookieAdapter(): CookieAdapter {
   }
 }
 
-export function createSupabaseServerClient(cookieAdapter: CookieAdapter = defaultCookieAdapter()): SupabaseClient<Database> | null {
+export async function createSupabaseServerClient(
+  cookieAdapter?: CookieAdapter
+): Promise<SupabaseClient<Database> | null> {
   const env = getSupabaseEnv()
 
   if (!env) {
     return null
   }
 
+  const adapter = cookieAdapter ?? (await getDefaultCookieAdapter())
+
   return createServerClient<Database>(env.url, env.anonKey, {
     cookies: {
-      getAll: () => cookieAdapter.getAll(),
-      setAll: cookiesToSet => cookieAdapter.setAll?.(cookiesToSet),
+      getAll: () => adapter.getAll(),
+      setAll: cookiesToSet => adapter.setAll?.(cookiesToSet),
     },
   })
 }
