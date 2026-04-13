@@ -15,7 +15,14 @@ export function createSupabaseBrowserClient() {
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient<Database>(env.url, env.anonKey)
+    // Belt-and-suspenders try/catch: getSupabaseEnv() already validates the URL,
+    // but if @supabase/ssr adds stricter validation in a future version this prevents
+    // an unhandled exception from breaking static page generation during the Vercel build.
+    try {
+      browserClient = createBrowserClient<Database>(env.url, env.anonKey)
+    } catch {
+      return null
+    }
   }
 
   return browserClient

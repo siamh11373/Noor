@@ -4,11 +4,29 @@ function read(value: string | undefined) {
   return value?.trim() || null
 }
 
+// SECURITY FIX: validate that the URL is actually HTTP/HTTPS before accepting it.
+// Previously a placeholder like "undefined" or "https://your-project.supabase.co" would
+// pass the non-empty check, reach createBrowserClient, and throw at build time with
+// "Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL."
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export function getSupabaseEnv() {
   const url = read(process.env.NEXT_PUBLIC_SUPABASE_URL)
   const anonKey = read(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
   if (!url || !anonKey) {
+    return null
+  }
+
+  // Reject placeholder or malformed URL values so they never reach the Supabase constructor
+  if (!isValidHttpUrl(url)) {
     return null
   }
 
