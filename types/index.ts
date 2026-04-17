@@ -247,6 +247,25 @@ export interface AccountabilityPeer {
   connectedAt: string
 }
 
+/** Named multi-member circle (parallel to 1:1 accountability). */
+export interface CircleSummary {
+  id: string
+  name: string
+  createdBy: string
+  createdAt: string
+  memberCount: number
+  joinedAt: string
+}
+
+export interface PendingCircleInvite {
+  id: string
+  circle_id: string
+  code: string
+  expires_at: string
+  created_at: string
+  circleName: string
+}
+
 export interface AuthUser {
   id: string
   email: string

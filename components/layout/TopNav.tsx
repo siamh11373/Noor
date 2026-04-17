@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { label: 'Tasks',   href: '/tasks',   accent: 'tasks' },
   { label: 'Fitness', href: '/fitness', accent: 'fitness' },
   { label: 'Family',  href: '/family',  accent: 'family' },
+  { label: 'Circles', href: '/circles', accent: 'circles' },
 ] as const
 
 const ACCENT_CLASSES: Record<string, string> = {
@@ -23,6 +24,7 @@ const ACCENT_CLASSES: Record<string, string> = {
   tasks:   'bg-tasks-light text-tasks-text',
   fitness: 'bg-fitness-light text-fitness-text',
   family:  'bg-family-light text-family-text',
+  circles: 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-200',
 }
 
 export function TopNav() {

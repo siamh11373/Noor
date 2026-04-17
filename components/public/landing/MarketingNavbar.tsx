@@ -85,10 +85,17 @@ function MobileNav() {
       >
         <Link
           href="/"
-          className="flex items-center gap-3 text-[28px] font-semibold tracking-tight text-white/95"
+          className="flex items-center gap-4 text-[32px] font-semibold tracking-tight text-white/95"
         >
-          <Image src="/logo-white.png" alt="" width={44} height={44} className="rounded-full" />
-          Noor
+          <Image
+            src="/logo-white.png"
+            alt=""
+            width={112}
+            height={112}
+            className="h-[72px] w-[72px] shrink-0 rounded-full"
+            sizes="72px"
+          />
+          <span className="whitespace-nowrap">Noor</span>
         </Link>
 
         <button
@@ -230,10 +237,25 @@ export function MarketingNavbar() {
                 >
                   <Link
                     href="/"
-                    className="shrink-0 flex items-center gap-3.5 text-[30px] font-semibold tracking-tight text-white/95"
+                    className={cn(
+                      'shrink-0 flex items-center font-semibold tracking-tight text-white/95 transition-[gap,font-size] duration-[1200ms]',
+                      isScrolled ? 'gap-3 text-[26px]' : 'gap-5 text-[36px]',
+                    )}
+                    style={{ transitionTimingFunction: ease }}
                   >
-                    <Image src="/logo-white.png" alt="" width={48} height={48} className="rounded-full" />
-                    Noor
+                    <Image
+                      src="/logo-white.png"
+                      alt=""
+                      width={128}
+                      height={128}
+                      className={cn(
+                        'shrink-0 rounded-full transition-[width,height] duration-[1200ms]',
+                        isScrolled ? 'h-16 w-16' : 'h-[5.75rem] w-[5.75rem]',
+                      )}
+                      style={{ transitionTimingFunction: ease }}
+                      sizes="(max-width: 768px) 72px, 92px"
+                    />
+                    <span className="whitespace-nowrap">Noor</span>
                   </Link>
 
                   <div className="flex items-center gap-1">

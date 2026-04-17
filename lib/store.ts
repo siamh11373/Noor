@@ -3,6 +3,8 @@
 import { create } from 'zustand'
 import { startOfWeekKey, toDateKey } from '@/lib/date'
 import { calendarTaskMasterId } from '@/lib/task-recurrence'
+import type { CirclesBootstrapPayload } from '@/lib/circles-data'
+import { ACTIVE_CIRCLE_STORAGE_KEY } from '@/lib/circles-data'
 import type {
   AccountabilityInvite,
   AccountabilityPeer,
@@ -29,6 +31,8 @@ import type {
   WeeklyRecord,
   WeeklySplit,
   WorkoutSet,
+  CircleSummary,
+  PendingCircleInvite,
 } from '@/types'
 
 export const STATE_SCHEMA_VERSION = 1
@@ -331,6 +335,10 @@ interface SalahStore extends SalahDataState {
   currentProfile: Profile | null
   pendingInvites: AccountabilityInvite[]
   accountabilityPeers: AccountabilityPeer[]
+  circles: CircleSummary[]
+  circleMembers: Record<string, AccountabilityPeer[]>
+  activeCircleId: string | null
+  pendingCircleInvites: PendingCircleInvite[]
   authStatus: AuthStatus
   emailVerificationStatus: EmailVerificationStatus
   cloudSyncStatus: CloudSyncStatus
@@ -351,6 +359,8 @@ interface SalahStore extends SalahDataState {
   setDataHydrated: (value: boolean) => void
   setCurrentProfile: (profile: Profile | null) => void
   setAccountabilityData: (payload: { pendingInvites: AccountabilityInvite[]; peers: AccountabilityPeer[] }) => void
+  setCirclesData: (payload: CirclesBootstrapPayload) => void
+  setActiveCircleId: (circleId: string | null) => void
   seedOnboardingDraft: (payload?: { profile?: Profile | null; settings?: UserSettings }) => void
   patchOnboardingDraft: (patch: Partial<OnboardingDraft>) => void
   resetOnboardingDraft: () => void
@@ -410,6 +420,10 @@ function initialStoreState() {
     currentProfile: null as Profile | null,
     pendingInvites: [] as AccountabilityInvite[],
     accountabilityPeers: [] as AccountabilityPeer[],
+    circles: [] as CircleSummary[],
+    circleMembers: {} as Record<string, AccountabilityPeer[]>,
+    activeCircleId: null as string | null,
+    pendingCircleInvites: [] as PendingCircleInvite[],
     authStatus: 'loading' as AuthStatus,
     emailVerificationStatus: 'loading' as EmailVerificationStatus,
     cloudSyncStatus: 'idle' as CloudSyncStatus,
@@ -466,6 +480,26 @@ export const useSalahStore = create<SalahStore>()((set, get) => ({
       pendingInvites: payload.pendingInvites,
       accountabilityPeers: payload.peers,
     })
+  },
+
+  setCirclesData(payload) {
+    set({
+      circles: payload.circles,
+      circleMembers: payload.circleMembers,
+      pendingCircleInvites: payload.pendingCircleInvites,
+      activeCircleId: payload.activeCircleId,
+    })
+  },
+
+  setActiveCircleId(circleId) {
+    if (typeof window !== 'undefined') {
+      if (circleId) {
+        window.localStorage.setItem(ACTIVE_CIRCLE_STORAGE_KEY, circleId)
+      } else {
+        window.localStorage.removeItem(ACTIVE_CIRCLE_STORAGE_KEY)
+      }
+    }
+    set({ activeCircleId: circleId })
   },
 
   seedOnboardingDraft(payload) {
@@ -535,6 +569,9 @@ export const useSalahStore = create<SalahStore>()((set, get) => ({
   },
 
   resetStore() {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(ACTIVE_CIRCLE_STORAGE_KEY)
+    }
     set(initialStoreState())
   },
 

@@ -125,6 +125,71 @@ export interface Database {
         }
         Relationships: []
       }
+      circles: {
+        Row: {
+          id: string
+          name: string
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          name?: string
+        }
+        Relationships: []
+      }
+      circle_members: {
+        Row: {
+          circle_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          circle_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          joined_at?: string
+        }
+        Relationships: []
+      }
+      circle_invites: {
+        Row: {
+          id: string
+          circle_id: string
+          created_by: string
+          code: string
+          status: 'active' | 'accepted' | 'expired' | 'revoked'
+          expires_at: string
+          accepted_by: string | null
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          circle_id: string
+          created_by: string
+          code: string
+          status?: 'active' | 'accepted' | 'expired' | 'revoked'
+          expires_at: string
+          accepted_by?: string | null
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          status?: 'active' | 'accepted' | 'expired' | 'revoked'
+          expires_at?: string
+          accepted_by?: string | null
+          accepted_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -138,6 +203,22 @@ export interface Database {
       }
       remove_accountability_connection: {
         Args: { peer_id: string }
+        Returns: Json
+      }
+      create_circle: {
+        Args: { p_name: string }
+        Returns: Json
+      }
+      create_circle_invite: {
+        Args: { p_circle_id: string; expires_in_hours?: number }
+        Returns: Json
+      }
+      accept_circle_invite: {
+        Args: { invite_code: string }
+        Returns: Json
+      }
+      leave_circle: {
+        Args: { p_circle_id: string }
         Returns: Json
       }
     }

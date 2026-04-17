@@ -13,7 +13,7 @@ function devAuthBypassActive(): boolean {
 
 const AUTH_ROUTES = ['/login', '/signup', '/verify-email', '/reset-password', '/auth/callback']
 const ONBOARDING_ROUTES = ['/onboarding']
-const PRIVATE_ROUTES = ['/faith', '/tasks', '/fitness', '/family', '/account']
+const PRIVATE_ROUTES = ['/faith', '/tasks', '/fitness', '/family', '/circles', '/account']
 
 // SECURITY FIX: simple in-memory rate limiter for authentication endpoints.
 // Limits each IP to 10 requests per minute on auth routes to slow brute-force and enumeration attacks.

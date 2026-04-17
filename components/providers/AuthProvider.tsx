@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
+import { loadCirclesBootstrap } from '@/lib/circles-data'
 import { upsertUserStateAndSnapshot } from '@/lib/supabase/state-sync'
 import {
   clearLocalStateCache,
@@ -50,6 +51,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
   refreshAccountability: () => Promise<void>
+  refreshCircles: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -208,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authStatus = useSalahStore(state => state.authStatus)
   const dataHydrated = useSalahStore(state => state.dataHydrated)
   const setAccountabilityData = useSalahStore(state => state.setAccountabilityData)
+  const setCirclesData = useSalahStore(state => state.setCirclesData)
   const setAuthStatus = useSalahStore(state => state.setAuthStatus)
   const setCloudSyncStatus = useSalahStore(state => state.setCloudSyncStatus)
   const setCurrentProfile = useSalahStore(state => state.setCurrentProfile)
@@ -232,6 +235,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccountabilityData(accountability)
   }, [client, session?.user, setAccountabilityData])
 
+  const refreshCircles = useCallback(async () => {
+    if (!client || !session?.user?.email_confirmed_at) {
+      setCirclesData({ circles: [], circleMembers: {}, pendingCircleInvites: [], activeCircleId: null })
+      return
+    }
+
+    const payload = await loadCirclesBootstrap(client, session.user.id)
+    setCirclesData(payload)
+  }, [client, session?.user, setCirclesData])
+
   const refreshProfile = useCallback(async () => {
     if (!client || !session?.user?.email_confirmed_at) {
       return
@@ -255,6 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setEmailVerificationStatus(sessionUser ? 'unverified' : 'unverified')
       setCurrentProfile(null)
       setAccountabilityData({ pendingInvites: [], peers: [] })
+      setCirclesData({ circles: [], circleMembers: {}, pendingCircleInvites: [], activeCircleId: null })
       setCloudSyncStatus('idle')
       setOnboardingStatus('loading')
       setOnboardingStep(0)
@@ -306,13 +320,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLastSyncedAt(remoteStateRow?.updated_at ?? null)
     setHasImportedLocalData(importAlreadyHandled)
 
-    const accountability = await loadAccountabilityData(client, sessionUser.id)
+    const [accountability, circlesPayload] = await Promise.all([
+      loadAccountabilityData(client, sessionUser.id),
+      loadCirclesBootstrap(client, sessionUser.id),
+    ])
 
     if (runId !== bootIdRef.current) {
       return
     }
 
     setAccountabilityData(accountability)
+    setCirclesData(circlesPayload)
     setPendingImportState(legacyState)
     startTransition(() => setIsReady(true))
   }, [
@@ -321,6 +339,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetStore,
     resetOnboardingDraft,
     setAccountabilityData,
+    setCirclesData,
     setAuthStatus,
     setCloudSyncStatus,
     setCurrentProfile,
@@ -471,7 +490,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     refreshProfile,
     refreshAccountability,
-  }), [client, isConfigured, isReady, profile, refreshAccountability, refreshProfile, session, signOut, user])
+    refreshCircles,
+  }), [client, isConfigured, isReady, profile, refreshAccountability, refreshCircles, refreshProfile, session, signOut, user])
 
   return (
     <AuthContext.Provider value={value}>

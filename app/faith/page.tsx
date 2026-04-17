@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BookOpenText } from 'lucide-react'
@@ -34,35 +34,56 @@ import type { PillarScores } from '@/types'
 
 const MODULES = [
   { label: 'Faith', href: '/faith', key: 'faith' as keyof PillarScores, cls: 'bg-faith-light text-faith-text' },
-  { label: 'Tasks', href: '/tasks', key: 'career' as keyof PillarScores, cls: 'bg-tasks-light text-tasks-text' },
+  { label: 'Tasks today', href: '/tasks', key: 'career' as keyof PillarScores, cls: 'bg-tasks-light text-tasks-text' },
   { label: 'Fitness', href: '/fitness', key: 'fitness' as keyof PillarScores, cls: 'bg-fitness-light text-fitness-text' },
   { label: 'Family', href: '/family', key: 'family' as keyof PillarScores, cls: 'bg-family-light text-family-text' },
 ] as const
 
 function ModuleNav({ pillars }: { pillars: PillarScores }) {
   const pathname = usePathname()
+  const calendarTasks = useSalahStore((s) => s.calendarTasks)
+  const todayStr = toDateKey(new Date())
+  const tasksTodayCount = useMemo(() => {
+    const list = calendarTasks.filter((t) => t.date === todayStr)
+    return {
+      done: list.filter((t) => t.completed).length,
+      total: list.length,
+    }
+  }, [calendarTasks, todayStr])
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {MODULES.map((m) => {
         const active = pathname.startsWith(m.href)
+        const isTasks = m.key === 'career'
         return (
           <Link
             key={m.href}
             href={m.href}
             className={cn(
-              'flex items-center justify-between rounded-xl border px-3.5 py-2.5 transition-colors',
+              'flex min-h-[3rem] items-center justify-between rounded-xl border px-4 py-3.5 transition-colors',
               active
                 ? 'border-brand-200 bg-brand-50'
                 : 'border-surface-border bg-surface-card hover:bg-surface-raised',
             )}
           >
-            <span className={cn('text-[13px]', active ? 'font-medium text-brand-500' : 'text-ink-secondary')}>
+            <span className={cn('text-[14px] leading-tight', active ? 'font-medium text-brand-500' : 'text-ink-secondary')}>
               {m.label}
             </span>
-            <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', m.cls)}>
-              {pillars[m.key]}
-            </span>
+            {isTasks ? (
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums tracking-tight',
+                  m.cls,
+                )}
+              >
+                {tasksTodayCount.done} / {tasksTodayCount.total}
+              </span>
+            ) : (
+              <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums', m.cls)}>
+                {pillars[m.key]}
+              </span>
+            )}
           </Link>
         )
       })}
