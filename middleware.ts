@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { copySupabaseCookies, updateSupabaseSession } from '@/lib/supabase/middleware'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 
+/**
+ * Local UI testing without going through Supabase auth.
+ * Set in `.env.local` only: NEXT_PUBLIC_DEV_AUTH_BYPASS=true
+ * Requires `next dev` (NODE_ENV=development). Ignored on Vercel production/preview builds.
+ */
+function devAuthBypassActive(): boolean {
+  return process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true'
+}
+
 const AUTH_ROUTES = ['/login', '/signup', '/verify-email', '/reset-password', '/auth/callback']
 const ONBOARDING_ROUTES = ['/onboarding']
 const PRIVATE_ROUTES = ['/faith', '/tasks', '/fitness', '/family', '/account']
@@ -72,9 +81,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  if (devAuthBypassActive()) {
+    return NextResponse.next()
+  }
+
   // SECURITY FIX: apply rate limiting to all authentication-related routes before any other processing.
   // Uses x-forwarded-for (set by Vercel/proxies) with a fallback to x-real-ip.
-  if (isRouteMatch(pathname, AUTH_ROUTES)) {
+  // Skip in development: RSC/HMR triggers many middleware runs; a shared "unknown" IP hits the cap quickly.
+  if (process.env.NODE_ENV !== 'development' && isRouteMatch(pathname, AUTH_ROUTES)) {
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
       request.headers.get('x-real-ip') ??

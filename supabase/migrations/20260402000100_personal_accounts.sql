@@ -1,8 +1,12 @@
 create extension if not exists pgcrypto;
 
+-- SECURITY FIX: added 'security definer' and 'set search_path = public' to prevent
+-- search_path injection attacks where an attacker-controlled schema could shadow public objects
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   new.updated_at = timezone('utc', now());

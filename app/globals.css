@@ -208,6 +208,7 @@
   .auth-dark-inputs .btn-primary {
     @apply bg-[rgb(196,144,58)] border-[rgb(196,144,58)] hover:bg-[rgb(214,170,95)];
   }
+  /* ink-secondary here is for muted labels; pairing it with light bg-brand-50 (light theme) made success alerts unreadable on the auth card */
   .auth-dark-inputs .text-ink-secondary,
   .auth-dark-inputs .text-ink-ghost {
     color: rgba(255, 255, 255, 0.45);
@@ -218,8 +219,24 @@
   .auth-dark-inputs .bg-surface-raised {
     background: rgba(255, 255, 255, 0.04);
   }
+  /* surface-card is white in the light token set; muted ink becomes white/45% here → unreadable */
+  .auth-dark-inputs .bg-surface-card {
+    background: rgba(255, 255, 255, 0.07);
+  }
   .auth-dark-inputs .border-surface-border {
     border-color: rgba(255, 255, 255, 0.08);
+  }
+  .auth-dark-inputs .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .auth-dark-inputs .btn-secondary:hover:not(:disabled) {
+    border-color: rgb(196, 144, 58);
+    color: rgb(214, 170, 95);
+  }
+  .auth-dark-inputs .btn-secondary:disabled {
+    opacity: 0.35;
   }
   .auth-dark-inputs .border-fitness\/20 {
     border-color: rgba(255, 126, 59, 0.2);
@@ -229,5 +246,11 @@
   }
   .auth-dark-inputs .text-fitness-text {
     color: rgb(255, 171, 122);
+  }
+
+  /* Selected text on auth glass: default OS selection (light blue + pale text) was unreadable */
+  .auth-dark-inputs *::selection {
+    background: rgba(196, 144, 58, 0.45);
+    color: #fff;
   }
 }

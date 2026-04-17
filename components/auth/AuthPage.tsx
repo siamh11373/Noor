@@ -123,8 +123,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
     })
 
     if (signUpError) {
-      // SECURITY FIX: show generic message to prevent revealing whether an email is already registered
-      setError('Could not create your account. If you already have an account, try signing in.')
+      // Production: generic copy. Development: show Supabase message + targeted hints.
+      if (process.env.NODE_ENV === 'development') {
+        const msg = signUpError.message ?? 'Unknown error'
+        const keyHint =
+          /unregistered api key|invalid api key|jwt/i.test(msg)
+            ? ' Fix: Supabase → Settings → API → **Legacy anon, service_role API keys** → copy the **anon** `public` JWT (eyJ…) into NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local, restart dev. Ensure it matches the same project as NEXT_PUBLIC_SUPABASE_URL.'
+            : ` emailRedirectTo: ${callbackUrl.toString()} (if the error is about redirect, add this URL under Authentication → URL Configuration).`
+        setError(`[dev] ${msg} —${keyHint}`)
+      } else {
+        setError('Could not create an account. Try again or sign in if you already have one.')
+      }
       setSubmitting(false)
       return
     }
@@ -152,7 +161,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             'mb-5 rounded-2xl border px-4 py-3 text-[13px]',
             error
               ? 'border-fitness/20 bg-fitness-light/50 text-fitness-text'
-              : 'border-brand-200 bg-brand-50 text-ink-secondary'
+              : 'border-white/14 bg-white/[0.07] text-white/[0.92]'
           )}
         >
           {error || info || routeMessage}

@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
           className={`mb-5 rounded-xl border px-4 py-3 text-[13px] ${
             error
               ? 'border-fitness/20 bg-fitness-light/40 text-fitness-text'
-              : 'border-brand-200 bg-brand-50 text-ink-secondary'
+              : 'border-white/14 bg-white/[0.07] text-white/[0.92]'
           }`}
         >
           {error || message}

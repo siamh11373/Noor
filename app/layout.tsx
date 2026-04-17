@@ -20,7 +20,8 @@ export const metadata: Metadata = {
   title: 'Noor — Your life, anchored to your prayers',
   description:
     'The only system that uses your 5 daily prayers as the foundation for managing faith, family, career, and fitness — without streaks or guilt.',
-  icons: { icon: '/icon.png', apple: '/apple-icon.png' },
+  // Favicons: use app/icon.png + app/apple-icon.png (same asset as public/logo-white.png) so
+  // Next emits proper link tags; metadata-only /logo-white.png often shows the generic globe.
 }
 
 export default function RootLayout({
