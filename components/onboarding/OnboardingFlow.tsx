@@ -44,6 +44,7 @@ export function OnboardingFlow() {
   const dailyLogs = useSalahStore(state => state.dailyLogs)
   const weeklyRecords = useSalahStore(state => state.weeklyRecords)
   const calendarTasks = useSalahStore(state => state.calendarTasks)
+  const taskMonthNotes = useSalahStore(state => state.taskMonthNotes)
   const foodLog = useSalahStore(state => state.foodLog)
   const personalRecords = useSalahStore(state => state.personalRecords)
   const savingsGoals = useSalahStore(state => state.savingsGoals)
@@ -81,13 +82,14 @@ export function OnboardingFlow() {
       dailyLogs,
       weeklyRecords,
       calendarTasks,
+      taskMonthNotes,
       foodLog,
       personalRecords,
       savingsGoals,
       dhikr,
       settings: nextSettings,
     })
-  }, [calendarTasks, dailyLogs, dhikr, foodLog, onboardingDraft, personalRecords, savingsGoals, settings, weeklyRecords])
+  }, [calendarTasks, dailyLogs, dhikr, foodLog, onboardingDraft, personalRecords, savingsGoals, settings, taskMonthNotes, weeklyRecords])
 
   function nextStep() {
     setOnboardingStep(Math.min(currentStep + 1, totalSteps - 1))

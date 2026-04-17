@@ -129,12 +129,27 @@ export function createDefaultDataState(): SalahDataState {
     dailyLogs: {},
     weeklyRecords: {},
     calendarTasks: [],
+    taskMonthNotes: {},
     foodLog: [],
     personalRecords: [],
     savingsGoals: createDefaultSavingsGoals(),
     dhikr: { subhanAllah: 0, alhamdulillah: 0, allahuAkbar: 0 },
     settings: createDefaultSettings(),
   }
+}
+
+const MONTH_NOTE_KEY = /^\d{4}-\d{2}$/
+const MAX_MONTH_NOTE_CHARS = 2000
+
+function normalizeTaskMonthNotes(input: unknown, fallback: Record<string, string>): Record<string, string> {
+  if (!isRecord(input)) return { ...fallback }
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(input)) {
+    if (!MONTH_NOTE_KEY.test(k)) continue
+    const text = typeof v === 'string' ? v : String(v ?? '')
+    out[k] = text.slice(0, MAX_MONTH_NOTE_CHARS)
+  }
+  return out
 }
 
 export function normalizeSerializedState(input: unknown): SerializedSalahState {
@@ -148,6 +163,7 @@ export function normalizeSerializedState(input: unknown): SerializedSalahState {
     dailyLogs: isRecord(value.dailyLogs) ? (value.dailyLogs as Record<string, DailyLog>) : defaults.dailyLogs,
     weeklyRecords: isRecord(value.weeklyRecords) ? (value.weeklyRecords as Record<string, WeeklyRecord>) : defaults.weeklyRecords,
     calendarTasks: Array.isArray(value.calendarTasks) ? (value.calendarTasks as CalendarTask[]) : defaults.calendarTasks,
+    taskMonthNotes: normalizeTaskMonthNotes(value.taskMonthNotes, defaults.taskMonthNotes),
     foodLog: Array.isArray(value.foodLog) ? (value.foodLog as FoodEntry[]) : defaults.foodLog,
     personalRecords: Array.isArray(value.personalRecords) ? (value.personalRecords as PersonalRecord[]) : defaults.personalRecords,
     savingsGoals: Array.isArray(value.savingsGoals) ? (value.savingsGoals as SavingsGoal[]) : defaults.savingsGoals,
@@ -178,6 +194,7 @@ export function serializeStoreData(data: SalahDataState): SerializedSalahState {
     dailyLogs: data.dailyLogs,
     weeklyRecords: data.weeklyRecords,
     calendarTasks: data.calendarTasks,
+    taskMonthNotes: data.taskMonthNotes,
     foodLog: data.foodLog,
     personalRecords: data.personalRecords,
     savingsGoals: data.savingsGoals,
@@ -376,6 +393,7 @@ interface SalahStore extends SalahDataState {
   applyCalendarTaskPatches: (patches: Array<{ id: string; patch: Partial<Omit<CalendarTask, 'id'>> }>) => void
   deleteCalendarTask: (id: string) => void
   toggleCalendarTask: (id: string) => void
+  setTaskMonthNote: (monthKey: string, body: string) => void
 
   addSavingsDeposit: (goalId: string, amount: number) => void
   upsertSavingsGoal: (goal: SavingsGoal) => void
@@ -914,6 +932,17 @@ export const useSalahStore = create<SalahStore>()((set, get) => ({
     set(s => ({
       calendarTasks: s.calendarTasks.map(t => (t.id === mid ? { ...t, completed: !t.completed } : t)),
     }))
+  },
+
+  setTaskMonthNote(monthKey, body) {
+    if (!MONTH_NOTE_KEY.test(monthKey)) return
+    const trimmed = body.trim().slice(0, MAX_MONTH_NOTE_CHARS)
+    set((s) => {
+      const next = { ...s.taskMonthNotes }
+      if (!trimmed) delete next[monthKey]
+      else next[monthKey] = trimmed
+      return { taskMonthNotes: next }
+    })
   },
 
   addSavingsDeposit(goalId, amount) {

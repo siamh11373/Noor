@@ -6,7 +6,8 @@ import { TaskDayPanel } from '@/components/tasks/TaskDayPanel'
 import { TaskScheduleDayList } from '@/components/tasks/TaskScheduleDayList'
 import { TaskScheduleWeekBoard } from '@/components/tasks/TaskScheduleWeekBoard'
 import { WeekCalendarView } from '@/components/tasks/WeekCalendarView'
-import { toDateKey } from '@/lib/date'
+import { TasksLeftRail } from '@/components/tasks/TasksLeftRail'
+import { monthKey, parseDateKey, shiftMonthKeepingDay, toDateKey } from '@/lib/date'
 import {
   calendarTaskMasterId,
   expandCalendarTasksForDateKeys,
@@ -25,9 +26,10 @@ import {
   timeToMinutes,
 } from '@/lib/tasks-calendar'
 import { useSalahStore } from '@/lib/store'
+import { useLgUp } from '@/hooks/useLgUp'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
 import { computePrayerTimesForDates } from '@/lib/prayers'
-import { CalendarDays, ListChecks } from 'lucide-react'
+import { CalendarDays, ListChecks, PanelLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PillarKey, PrayerTime } from '@/types'
 
@@ -319,7 +321,8 @@ function MonthView({
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 export default function TasksPage() {
-  const { prayerTimes } = usePrayerTimes()
+  const lgUp = useLgUp()
+  const { prayerTimes, nextPrayer, countdownLabel, loading: prayerLoading } = usePrayerTimes()
   const settings = useSalahStore((s) => s.settings)
   const {
     calendarTasks,
@@ -332,6 +335,7 @@ export default function TasksPage() {
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('time')
   const [view, setView] = useState<ViewMode>('week')
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const [weekPrayerTimes, setWeekPrayerTimes] = useState<Record<string, PrayerTime[]>>({})
 
   const computeWeekPrayers = useCallback(
@@ -377,6 +381,25 @@ export default function TasksPage() {
     [calendarTasks, expansionDateKeys],
   )
 
+  const anchorMonth = useMemo(
+    () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1, 12, 0, 0, 0),
+    [selectedDate],
+  )
+
+  const calendarTasksInAnchorMonth = useMemo(() => {
+    const y = anchorMonth.getFullYear()
+    const m = anchorMonth.getMonth()
+    return calendarTasks.filter((t) => {
+      const d = parseDateKey(t.date)
+      return d.getFullYear() === y && d.getMonth() === m
+    })
+  }, [calendarTasks, anchorMonth])
+
+  const todayTasksForRail = useMemo(() => {
+    const key = toDateKey(new Date())
+    return expandCalendarTasksForDateKeys(calendarTasks, [key]).filter((t) => t.date === key)
+  }, [calendarTasks])
+
   useEffect(() => {
     if (!dayPanelTaskId) return
     const mid = calendarTaskMasterId(dayPanelTaskId)
@@ -397,6 +420,11 @@ export default function TasksPage() {
 
   function goToday() {
     setSelectedDate(new Date())
+    setMobileRailOpen(false)
+  }
+
+  function navigateMonth(dir: -1 | 1) {
+    setSelectedDate((d) => shiftMonthKeepingDay(d, dir))
   }
 
   function navigate(dir: -1 | 1) {
@@ -435,7 +463,14 @@ export default function TasksPage() {
           })()
         : selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
-  const handleAddTask = () => {
+  const weekRangeCaption =
+    view === 'week'
+      ? dateLabel
+      : view === 'day'
+        ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+        : null
+
+  function handleAddTask() {
     if (scheduleMode === 'task') {
       const dateKey = taskQuickAddDateKey(view, selectedDate)
       const dayTasks = calendarTasks.filter((t) => t.date === dateKey)
@@ -482,10 +517,40 @@ export default function TasksPage() {
     )
   }
 
+  const monthFocusLabel = anchorMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+
+  const railProps = {
+    selectedDate,
+    onSelectDay: (d: Date) => setSelectedDate(d),
+    onMonthNavigate: navigateMonth,
+    onGoToday: goToday,
+    onQuickAdd: () => {
+      handleAddTask()
+      setMobileRailOpen(false)
+    },
+    calendarTasksForAnchorMonth: calendarTasksInAnchorMonth,
+    anchorMonth,
+    weekRangeLabel: weekRangeCaption,
+    todayTasks: todayTasksForRail,
+    nextPrayer,
+    countdownLabel,
+    prayerLoading,
+    monthFocusKey: monthKey(anchorMonth),
+    monthFocusLabel,
+  }
+
   return (
     <div className="flex flex-col px-4 py-4 md:px-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileRailOpen(true)}
+            className="ui-toolbar-icon lg:hidden"
+            aria-label="Open schedule and calendar"
+          >
+            <PanelLeft className="h-4 w-4" aria-hidden />
+          </button>
           <h1 className="text-[22px] font-semibold tracking-tight text-ink-primary">Tasks</h1>
           <button type="button" onClick={goToday} className="ui-toolbar-btn">
             Today
@@ -559,7 +624,31 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-surface-border bg-surface-card">
+      {mobileRailOpen ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] lg:hidden"
+            aria-label="Close schedule panel"
+            onClick={() => setMobileRailOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-50 flex w-[min(100%,300px)] max-w-[min(100vw,300px)] flex-col overflow-y-auto overscroll-contain border-r border-surface-border bg-surface-card shadow-[4px_0_32px_rgba(0,0,0,0.12)] dark:bg-surface-raised dark:shadow-[4px_0_40px_rgba(0,0,0,0.45)] lg:hidden">
+            <TasksLeftRail
+              variant="drawer"
+              {...railProps}
+              mountMonthFocus={!lgUp && mobileRailOpen}
+              onClose={() => setMobileRailOpen(false)}
+            />
+          </div>
+        </>
+      ) : null}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-0">
+        <div className="hidden shrink-0 lg:block">
+          <TasksLeftRail variant="sidebar" {...railProps} mountMonthFocus={lgUp} />
+        </div>
+
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-surface-border bg-surface-card">
         {scheduleMode === 'time' && view === 'day' && (
           <DayCalendarView
             date={selectedDate}
@@ -621,6 +710,7 @@ export default function TasksPage() {
             onOpenTask={setDayPanelTaskId}
           />
         )}
+        </div>
       </div>
 
       {(view === 'day' || view === 'week' || (scheduleMode === 'task' && view === 'month')) &&

@@ -311,6 +311,8 @@ export interface SalahDataState {
   dailyLogs: Record<string, DailyLog>
   weeklyRecords: Record<string, WeeklyRecord>
   calendarTasks: CalendarTask[]
+  /** Tasks rail: month focus notes, keyed YYYY-MM */
+  taskMonthNotes: Record<string, string>
   foodLog: FoodEntry[]
   personalRecords: PersonalRecord[]
   savingsGoals: SavingsGoal[]

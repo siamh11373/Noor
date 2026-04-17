@@ -198,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dailyLogs: state.dailyLogs,
     weeklyRecords: state.weeklyRecords,
     calendarTasks: state.calendarTasks,
+    taskMonthNotes: state.taskMonthNotes,
     foodLog: state.foodLog,
     personalRecords: state.personalRecords,
     savingsGoals: state.savingsGoals,
