@@ -44,7 +44,7 @@ export function AuthShell({
         <div className="grid flex-1 items-center gap-12 lg:grid-cols-2">
           {/* Left: brand statement */}
           <div className="hidden lg:block">
-            <p className={`${LANDING_BODY_FONT} text-[12px] font-semibold uppercase tracking-[0.3em] text-[rgb(214,170,95)]`}>
+            <p className={`${LANDING_BODY_FONT} text-[12px] font-semibold uppercase tracking-[0.3em] text-[rgb(212,165,116)]`}>
               Prayer-centered operating system
             </p>
             <h1 className="mt-6 text-[40px] leading-[1.06] tracking-tight xl:text-[52px]">
@@ -54,7 +54,7 @@ export function AuthShell({
               <span className={`${LANDING_BODY_FONT} font-semibold text-white/95`}>
                 around{' '}
               </span>
-              <span className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(154,214,158)]`}>
+              <span className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(172,212,182)]`}>
                 salah
               </span>
               <span className={`${LANDING_BODY_FONT} font-semibold text-white/95`}>
@@ -64,7 +64,7 @@ export function AuthShell({
               <span className={`${LANDING_BODY_FONT} font-semibold text-white/95`}>
                 not around{' '}
               </span>
-              <span className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(214,170,95)]`}>
+              <span className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(212,165,116)]`}>
                 guilt
               </span>
               <span className={`${LANDING_BODY_FONT} font-semibold text-white/95`}>
@@ -97,7 +97,7 @@ export function AuthShell({
           {/* Right: form card */}
           <div className="flex items-center justify-center">
             <div className="w-full max-w-[520px] rounded-[32px] border border-white/10 bg-white/[0.06] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[rgb(214,170,95)]">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[rgb(212,165,116)]">
                 {eyebrow}
               </p>
               <h2 className={`${LANDING_BODY_FONT} mt-3 text-[28px] font-semibold tracking-tight text-white/95 sm:text-[32px]`}>

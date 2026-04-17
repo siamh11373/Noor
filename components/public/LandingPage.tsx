@@ -24,7 +24,7 @@ export function LandingPage() {
           <PillarsGrid />
         </div>
         {/* Fade into lighter sections */}
-        <div className="relative z-10 h-24 bg-gradient-to-b from-transparent to-[#F7F7F5]" />
+        <div className="relative z-10 h-24 bg-gradient-to-b from-transparent to-[#FAF7F2]" />
       </div>
 
       {/* ── Light middle sections ── */}

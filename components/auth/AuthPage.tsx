@@ -149,7 +149,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-white/40">
           <span>Email verification is required before the dashboard unlocks.</span>
-          <Link href={mode === 'login' ? '/signup' : '/login'} className="text-[rgb(214,170,95)] hover:text-[rgb(224,190,120)]">
+          <Link href={mode === 'login' ? '/signup' : '/login'} className="text-[rgb(212,165,116)] hover:text-[rgb(237,196,146)]">
             {mode === 'login' ? 'Need an account?' : 'Already have an account?'}
           </Link>
         </div>
@@ -242,7 +242,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
 
         <div className="flex items-center justify-between text-[13px] text-white/40">
           <span>{mode === 'login' ? 'No shared workspace or roles.' : 'No restaurant/shelter roles.'}</span>
-          <Link href="/reset-password" className="text-[rgb(214,170,95)] hover:text-[rgb(224,190,120)]">
+          <Link href="/reset-password" className="text-[rgb(212,165,116)] hover:text-[rgb(237,196,146)]">
             Reset password
           </Link>
         </div>

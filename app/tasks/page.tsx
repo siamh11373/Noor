@@ -1,12 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DayCalendarView } from '@/components/tasks/DayCalendarView'
 import { TaskDayPanel } from '@/components/tasks/TaskDayPanel'
 import { TaskScheduleDayList } from '@/components/tasks/TaskScheduleDayList'
 import { TaskScheduleWeekBoard } from '@/components/tasks/TaskScheduleWeekBoard'
 import { WeekCalendarView } from '@/components/tasks/WeekCalendarView'
 import { toDateKey } from '@/lib/date'
+import {
+  calendarTaskMasterId,
+  expandCalendarTasksForDateKeys,
+  extractVirtualOccurrenceDateKey,
+  getMonthDateKeys,
+  getWeekDateKeys,
+} from '@/lib/task-recurrence'
 import { nextStartForAppend } from '@/lib/task-schedule-order'
 import {
   DAY_END_MINUTES,
@@ -20,6 +27,7 @@ import {
 import { useSalahStore } from '@/lib/store'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
 import { computePrayerTimesForDates } from '@/lib/prayers'
+import { CalendarDays, ListChecks } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PillarKey, PrayerTime } from '@/types'
 
@@ -344,6 +352,7 @@ export default function TasksPage() {
   }, [computeWeekPrayers, selectedDate])
 
   const [dayPanelTaskId, setDayPanelTaskId] = useState<string | null>(null)
+  const [suppressTaskPanelForDrag, setSuppressTaskPanelForDrag] = useState(false)
 
   useEffect(() => {
     if (view !== 'day' && view !== 'week') {
@@ -357,12 +366,26 @@ export default function TasksPage() {
     if (view === 'day' || view === 'week' || scheduleMode !== 'time') setPopover(null)
   }, [view, scheduleMode])
 
+  const expansionDateKeys = useMemo(() => {
+    if (view === 'day') return [toDateKey(selectedDate)]
+    if (view === 'week') return getWeekDateKeys(selectedDate)
+    return getMonthDateKeys(selectedDate)
+  }, [view, selectedDate])
+
+  const displayCalendarTasks = useMemo(
+    () => expandCalendarTasksForDateKeys(calendarTasks, expansionDateKeys),
+    [calendarTasks, expansionDateKeys],
+  )
+
   useEffect(() => {
     if (!dayPanelTaskId) return
-    if (!calendarTasks.some((t) => t.id === dayPanelTaskId)) {
-      setDayPanelTaskId(null)
-    }
+    const mid = calendarTaskMasterId(dayPanelTaskId)
+    if (!calendarTasks.some((t) => t.id === mid)) setDayPanelTaskId(null)
   }, [calendarTasks, dayPanelTaskId])
+
+  useEffect(() => {
+    if (!dayPanelTaskId) setSuppressTaskPanelForDrag(false)
+  }, [dayPanelTaskId])
 
   const [popover, setPopover] = useState<{
     type: 'create' | 'edit'
@@ -464,25 +487,16 @@ export default function TasksPage() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-[22px] font-semibold tracking-tight text-ink-primary">Tasks</h1>
-          <button
-            onClick={goToday}
-            className="rounded-lg border border-surface-border bg-surface-card px-3 py-1 text-[12px] font-medium text-ink-secondary transition-colors hover:bg-surface-muted"
-          >
+          <button type="button" onClick={goToday} className="ui-toolbar-btn">
             Today
           </button>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-ink-muted transition-colors hover:bg-surface-muted"
-            >
+            <button type="button" onClick={() => navigate(-1)} className="ui-toolbar-icon">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M8.5 3.5L5 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <button
-              onClick={() => navigate(1)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-ink-muted transition-colors hover:bg-surface-muted"
-            >
+            <button type="button" onClick={() => navigate(1)} className="ui-toolbar-icon">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M5.5 3.5L9 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -492,37 +506,46 @@ export default function TasksPage() {
         </div>
 
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div
-            className="flex shrink-0 rounded-lg border border-surface-border bg-surface-muted/40 p-0.5"
-            role="group"
-            aria-label="Schedule mode"
-          >
+          <div className="ui-segment" role="group" aria-label="Schedule mode">
             {(['time', 'task'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setScheduleMode(m)}
                 className={cn(
-                  'min-w-[5.5rem] rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors',
+                  'ui-segment-btn min-w-[6.25rem]',
                   scheduleMode === m
-                    ? 'bg-surface-card text-ink-primary shadow-sm'
-                    : 'text-ink-muted hover:text-ink-secondary',
+                    ? 'bg-surface-card text-ink-primary shadow-control'
+                    : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-card/60',
                 )}
               >
-                {m === 'time' ? 'Time' : 'Task'}
+                {m === 'time' ? (
+                  <>
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    <span>Time</span>
+                  </>
+                ) : (
+                  <>
+                    <ListChecks className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    <span>Task</span>
+                  </>
+                )}
               </button>
             ))}
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="flex flex-wrap justify-end gap-0.5 rounded-lg border border-surface-border bg-surface-card p-0.5">
+            <div className="ui-segment-surface">
               {(['day', 'week', 'month'] as ViewMode[]).map((v) => (
                 <button
                   key={v}
+                  type="button"
                   onClick={() => setView(v)}
                   className={cn(
-                    'rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3 sm:text-[12px]',
-                    view === v ? 'bg-tasks-light text-tasks-text' : 'text-ink-muted hover:text-ink-secondary',
+                    'ui-segment-chip',
+                    view === v
+                      ? 'bg-tasks-light text-tasks-text shadow-control'
+                      : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-muted/80',
                   )}
                 >
                   {VIEW_LABEL[v]}
@@ -540,19 +563,20 @@ export default function TasksPage() {
         {scheduleMode === 'time' && view === 'day' && (
           <DayCalendarView
             date={selectedDate}
-            tasks={calendarTasks}
+            tasks={displayCalendarTasks}
             prayerTimes={weekPrayerTimes[toDateKey(selectedDate)] ?? prayerTimes}
             focusedTaskId={dayPanelTaskId}
             onFocusedTaskIdChange={setDayPanelTaskId}
             addCalendarTask={addCalendarTask}
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
+            onTimeBlockDragSessionChange={setSuppressTaskPanelForDrag}
           />
         )}
         {scheduleMode === 'time' && view === 'week' && (
           <WeekCalendarView
             anchorDate={selectedDate}
-            tasks={calendarTasks}
+            tasks={displayCalendarTasks}
             prayerTimesByDate={weekPrayerTimes}
             focusedTaskId={dayPanelTaskId}
             onFocusedTaskIdChange={setDayPanelTaskId}
@@ -560,16 +584,18 @@ export default function TasksPage() {
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
             onOpenDay={handleSelectDay}
+            onTimeBlockDragSessionChange={setSuppressTaskPanelForDrag}
           />
         )}
         {scheduleMode === 'time' && view === 'month' && (
-          <MonthView date={selectedDate} tasks={calendarTasks} variant="time" onSelectDay={handleSelectDay} />
+          <MonthView date={selectedDate} tasks={displayCalendarTasks} variant="time" onSelectDay={handleSelectDay} />
         )}
 
         {scheduleMode === 'task' && view === 'day' && (
           <TaskScheduleDayList
             date={selectedDate}
-            tasks={calendarTasks}
+            tasks={displayCalendarTasks}
+            prayerTimes={weekPrayerTimes[toDateKey(selectedDate)] ?? prayerTimes}
             focusedTaskId={dayPanelTaskId}
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
@@ -579,9 +605,8 @@ export default function TasksPage() {
         {scheduleMode === 'task' && view === 'week' && (
           <TaskScheduleWeekBoard
             anchorDate={selectedDate}
-            tasks={calendarTasks}
+            tasks={displayCalendarTasks}
             focusedTaskId={dayPanelTaskId}
-            updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
             onFocusTask={setDayPanelTaskId}
             onOpenDay={handleSelectDay}
@@ -590,7 +615,7 @@ export default function TasksPage() {
         {scheduleMode === 'task' && view === 'month' && (
           <MonthView
             date={selectedDate}
-            tasks={calendarTasks}
+            tasks={displayCalendarTasks}
             variant="task"
             onSelectDay={handleSelectDay}
             onOpenTask={setDayPanelTaskId}
@@ -600,10 +625,17 @@ export default function TasksPage() {
 
       {(view === 'day' || view === 'week' || (scheduleMode === 'task' && view === 'month')) &&
         dayPanelTaskId &&
+        !suppressTaskPanelForDrag &&
         (() => {
-          const task = calendarTasks.find((t) => t.id === dayPanelTaskId)
-          if (!task) return null
-          const taskDay = new Date(`${task.date}T12:00:00`)
+          const masterId = calendarTaskMasterId(dayPanelTaskId)
+          const master = calendarTasks.find((t) => t.id === masterId)
+          if (!master) return null
+          const occKey = extractVirtualOccurrenceDateKey(dayPanelTaskId)
+          const panelTask: CalendarTask =
+            occKey != null
+              ? { ...master, id: dayPanelTaskId, date: occKey, recurrenceInstanceOf: masterId }
+              : master
+          const taskDay = new Date(`${panelTask.date}T12:00:00`)
           const weekdayDateLabel = taskDay.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
@@ -612,12 +644,13 @@ export default function TasksPage() {
           })
           return (
             <TaskDayPanel
-              key={task.id}
-              task={task}
+              key={dayPanelTaskId}
+              task={panelTask}
               weekdayDateLabel={weekdayDateLabel}
-              onPatch={(patch) => updateCalendarTask(task.id, patch)}
+              recurrenceAnchorDateKey={master.date}
+              onPatch={(patch) => updateCalendarTask(masterId, patch)}
               onDelete={() => {
-                deleteCalendarTask(task.id)
+                deleteCalendarTask(masterId)
                 setDayPanelTaskId(null)
               }}
               onClose={() => setDayPanelTaskId(null)}

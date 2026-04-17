@@ -137,15 +137,35 @@ export interface FoodEntry {
 
 // ─── CALENDAR TASKS ──────────────────────────────────────────────────────────
 
+export type RecurrenceFrequencyUnit = 'day' | 'week' | 'month' | 'year'
+
+export type RecurrenceEndMode = 'never' | 'until_date' | 'after_count'
+
+export type RecurrencePresetKind = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom'
+
+export interface CalendarTaskRecurrence {
+  preset: RecurrencePresetKind
+  interval: number
+  frequencyUnit: RecurrenceFrequencyUnit
+  /** 0 = Sunday … 6 = Saturday (JS getDay); used for weekly / custom-week */
+  byWeekday: number[]
+  end: RecurrenceEndMode
+  untilDate?: string
+  afterCount?: number
+}
+
 export interface CalendarTask {
   id: string
   title: string
-  date: string              // YYYY-MM-DD
+  date: string              // YYYY-MM-DD (series anchor for recurring tasks)
   startTime: string         // HH:mm (24h format)
   duration: number          // minutes
   pillar: PillarKey
   completed: boolean
   note?: string
+  recurrence?: CalendarTaskRecurrence
+  /** Present only on expanded synthetic rows in the UI (not persisted on master). */
+  recurrenceInstanceOf?: string
 }
 
 // ─── FAMILY ───────────────────────────────────────────────────────────────────

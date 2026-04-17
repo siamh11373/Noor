@@ -21,8 +21,10 @@ export function TaskPlannerSortableRow({
   /** Matches time-grid focused task (side panel open) */
   isSelected?: boolean
 }) {
+  const isRecurringInstance = Boolean(task.recurrenceInstanceOf)
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    disabled: isRecurringInstance,
   })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -46,23 +48,27 @@ export function TaskPlannerSortableRow({
       )}
     >
       <div className="flex items-start gap-2">
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          className="mt-0.5 cursor-grab touch-none text-ink-ghost hover:text-ink-muted active:cursor-grabbing"
-          aria-label="Drag to reorder"
-          {...attributes}
-          {...listeners}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
+        {isRecurringInstance ? (
+          <span className="mt-0.5 w-[14px] shrink-0" aria-hidden />
+        ) : (
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            className="mt-0.5 cursor-grab touch-none text-ink-ghost hover:text-ink-muted active:cursor-grabbing"
+            aria-label="Drag to reorder"
+            {...attributes}
+            {...listeners}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
         <button type="button" onClick={onOpen} className="min-h-0 min-w-0 flex-1 rounded-lg py-0.5 text-left hover:bg-surface-muted/50">
           <div className="flex items-center gap-2">
             <span

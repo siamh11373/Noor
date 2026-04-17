@@ -8,6 +8,7 @@ import {
   DEFAULT_NEW_TASK_MINUTES,
   formatHour,
   formatTimeDisplay,
+  HOUR_GUIDE_GRADIENT,
   HOUR_HEIGHT,
   MIN_DURATION_MIN,
   minutesToTime,
@@ -19,6 +20,8 @@ import {
   timeToMinutes,
   TOTAL_HOURS,
 } from '@/lib/tasks-calendar'
+import { hasActiveRecurrence } from '@/lib/task-recurrence'
+import { buildPrayerTimelineGradientImage } from '@/lib/prayer-sections'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PrayerTime } from '@/types'
 
@@ -69,6 +72,8 @@ export function CalendarDayColumn({
   scrollParentRef,
   weekDragPreview = null,
   setWeekDragPreview,
+  /** While true, parent may hide the task detail panel so it does not overlap the drag. */
+  onTimeBlockDragSessionChange,
 }: {
   variant: CalendarDayColumnVariant
   dateStr: string
@@ -84,7 +89,10 @@ export function CalendarDayColumn({
   /** Week only: lifted state so drag preview shows in the destination column. */
   weekDragPreview?: WeekDragPreview | null
   setWeekDragPreview?: (v: WeekDragPreview | null) => void
+  onTimeBlockDragSessionChange?: (active: boolean) => void
 }) {
+  const onTimeBlockDragSessionChangeRef = useRef(onTimeBlockDragSessionChange)
+  onTimeBlockDragSessionChangeRef.current = onTimeBlockDragSessionChange
   const [internalLive, setInternalLive] = useState<WeekDragPreview | null>(null)
   const liveOverride = variant === 'week' ? weekDragPreview : internalLive
   const publishPreview = useCallback(
@@ -218,6 +226,7 @@ export function CalendarDayColumn({
         if (Math.abs(ev.clientY - d.originY) < DRAG_THRESHOLD_PX) return
         d.mode = 'move'
         document.body.style.cursor = 'grabbing'
+        onTimeBlockDragSessionChangeRef.current?.(true)
       }
 
       if (d.mode === 'move') {
@@ -229,12 +238,15 @@ export function CalendarDayColumn({
             const snapped = snapMinutes(raw)
             const c = clampTaskToDay(snapped, d.initialDurationMin)
             // Horizontal: which column contains the pointer (geometry, not hit-testing the task).
-            const fromStore = tasks.find((t) => t.id === d.taskId)?.date
-            const nextDate =
+            const dragged = tasks.find((t) => t.id === d.taskId)
+            const fromStore = dragged?.date
+            const resolvedCol =
               resolveWeekColumnDate(scrollEl, ev.clientX) ??
               pendingGeomRef.current?.date ??
               fromStore ??
               dateStr
+            const lockWeekColumn = Boolean(dragged && hasActiveRecurrence(dragged))
+            const nextDate = lockWeekColumn ? (fromStore ?? dateStr) : resolvedCol
             const next: WeekDragPreview = {
               id: d.taskId,
               startTime: minutesToTime(c.startMins),
@@ -309,18 +321,22 @@ export function CalendarDayColumn({
       clearWindowDragListeners()
       document.body.style.cursor = ''
 
-      if (d.mode === 'pending-move') {
-        onFocusedTaskIdChange(d.taskId)
-        endDragSession()
-        return
-      }
+      try {
+        if (d.mode === 'pending-move') {
+          onFocusedTaskIdChange(d.taskId)
+          endDragSession()
+          return
+        }
 
-      const hit = document.elementFromPoint(ev.clientX, ev.clientY)
-      if (hit?.closest('[data-task-day-grid]') && !hit.closest('[data-task-block]')) {
-        skipNextGridClickRef.current = true
+        const hit = document.elementFromPoint(ev.clientX, ev.clientY)
+        if (hit?.closest('[data-task-day-grid]') && !hit.closest('[data-task-block]')) {
+          skipNextGridClickRef.current = true
+        }
+        commitPreview()
+        dragRef.current = null
+      } finally {
+        onTimeBlockDragSessionChangeRef.current?.(false)
       }
-      commitPreview()
-      dragRef.current = null
     }
 
     window.addEventListener('pointermove', onMove)
@@ -376,6 +392,7 @@ export function CalendarDayColumn({
     }
     e.currentTarget.setPointerCapture(e.pointerId)
     attachDragListeners()
+    onTimeBlockDragSessionChangeRef.current?.(true)
   }
 
   function onResizeBottomPointerDown(e: React.PointerEvent, task: CalendarTask) {
@@ -393,13 +410,26 @@ export function CalendarDayColumn({
     }
     e.currentTarget.setPointerCapture(e.pointerId)
     attachDragListeners()
+    onTimeBlockDragSessionChangeRef.current?.(true)
   }
 
-  useEffect(() => () => clearWindowDragListeners(), [clearWindowDragListeners])
+  useEffect(
+    () => () => {
+      clearWindowDragListeners()
+      onTimeBlockDragSessionChangeRef.current?.(false)
+    },
+    [clearWindowDragListeners],
+  )
 
   const isWeek = variant === 'week'
 
   /** Week only: persisted slot (from store) while a live preview differs — Google-style “holo”. */
+  const totalGridHeight = TOTAL_HOURS * HOUR_HEIGHT
+  const prayerBackgroundImage = useMemo(
+    () => buildPrayerTimelineGradientImage(prayerTimes, totalGridHeight),
+    [prayerTimes, totalGridHeight],
+  )
+
   const weekDragGhost = useMemo(() => {
     if (variant !== 'week' || !liveOverride) return null
     const origin = tasks.find((t) => t.id === liveOverride.id)
@@ -414,19 +444,58 @@ export function CalendarDayColumn({
   }, [variant, liveOverride, tasks, dateStr])
 
   const inner = (
-    <div className="relative" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
-      {isWeek
-        ? Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-            <div key={i} className="absolute inset-x-0 border-t border-surface-border" style={{ top: i * HOUR_HEIGHT }} />
-          ))
-        : Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-            <div key={i} className="absolute inset-x-0 flex items-start" style={{ top: i * HOUR_HEIGHT }}>
-              <span className="w-16 shrink-0 pr-3 text-right text-[11px] text-ink-ghost -translate-y-[7px]">
-                {formatHour(START_HOUR + i)}
-              </span>
-              <div className="flex-1 border-t border-surface-border" />
-            </div>
-          ))}
+    <div className="relative" style={{ height: totalGridHeight }}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-0"
+        style={{
+          height: totalGridHeight,
+          backgroundImage: prayerBackgroundImage,
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '100% 100%',
+        }}
+      />
+      {!isWeek && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1]"
+            style={{ height: totalGridHeight }}
+            aria-hidden
+          >
+            {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
+              <div
+                key={`hg-${i}`}
+                className="absolute"
+                style={{
+                  left: 'calc(4rem - 8px)',
+                  right: 0,
+                  top: i * HOUR_HEIGHT,
+                  transform: 'translateY(-50%)',
+                  height: 1,
+                  background: HOUR_GUIDE_GRADIENT,
+                }}
+              />
+            ))}
+          </div>
+          <div
+            className="pointer-events-none absolute left-0 top-0 z-[2] w-16 border-r border-surface-border/80"
+            style={{ height: totalGridHeight }}
+            aria-hidden
+          >
+            {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
+              <div
+                key={`tl-${i}`}
+                className="absolute left-0 right-0 flex justify-end pr-3"
+                style={{ top: i * HOUR_HEIGHT, transform: 'translateY(-50%)' }}
+              >
+                <span className="text-[11px] tabular-nums tracking-tight text-ink-ghost">
+                  {formatHour(START_HOUR + i)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {prayerTimes.map((pt) => {
         const mins = prayerToMinutes(pt)
@@ -462,13 +531,22 @@ export function CalendarDayColumn({
       {isToday && (
         <div
           className={cn(
-            'pointer-events-none absolute inset-x-0 z-20 flex items-center',
-            isWeek ? '' : 'pl-14',
+            'pointer-events-none absolute inset-x-0 z-20 flex items-center gap-0',
+            isWeek ? 'px-0.5' : 'pl-14',
           )}
-          style={{ top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT }}
+          style={{
+            top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT,
+            transform: 'translateY(-50%)',
+          }}
         >
-          {!isWeek && <div className="-ml-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />}
-          <div className={cn('border-t-2 border-red-500', isWeek ? 'flex-1' : 'flex-1')} />
+          <div
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-surface-border bg-surface-card shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+            aria-hidden
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- tiny inline badge; public asset */}
+            <img src="/logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
+          </div>
+          <div className="min-h-0 flex-1 border-t-[2.5px] border-ink-primary" />
         </div>
       )}
 

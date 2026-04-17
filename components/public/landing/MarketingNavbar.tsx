@@ -146,14 +146,14 @@ function MobileNav() {
           <div className="mt-8 space-y-3">
             <Link
               href="/signup"
-              className="flex items-center justify-center rounded-xl bg-[rgb(196,144,58)] px-6 py-4 text-[17px] font-semibold text-white"
+              className="btn-landing-primary flex items-center justify-center rounded-xl px-6 py-4 text-[17px]"
               onClick={() => setOpen(false)}
             >
               Create account
             </Link>
             <Link
               href="/login"
-              className="flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-4 text-[17px] font-medium text-white/85"
+              className="btn-landing-ghost flex items-center justify-center rounded-xl px-6 py-4 text-[17px]"
               onClick={() => setOpen(false)}
             >
               Log in
@@ -196,7 +196,7 @@ export function MarketingNavbar() {
               className={cn(
                 'relative transition-[background-color,backdrop-filter,border-color,box-shadow,border-radius] duration-[1200ms]',
                 isScrolled
-                  ? 'rounded-full border border-[rgba(196,144,58,0.18)] bg-[rgba(10,18,14,0.92)] shadow-[0_10px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl'
+                  ? 'rounded-full border border-[rgba(184,144,74,0.18)] bg-[rgba(10,18,14,0.92)] shadow-[0_10px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl'
                   : 'rounded-none border border-transparent bg-transparent shadow-none backdrop-blur-none',
               )}
               style={{ transitionTimingFunction: ease }}
@@ -210,7 +210,7 @@ export function MarketingNavbar() {
                 )}
                 style={{ transitionTimingFunction: ease }}
               >
-                <div className="absolute inset-0 rounded-full ring-1 ring-[rgba(196,144,58,0.12)]" />
+                <div className="absolute inset-0 rounded-full ring-1 ring-[rgba(184,144,74,0.12)]" />
               </div>
 
               <div
@@ -244,7 +244,7 @@ export function MarketingNavbar() {
                         className={cn(
                           'px-6 py-3 rounded-full text-[16px] font-medium transition-[background-color,color] duration-300',
                           active === item.id
-                            ? 'text-[rgb(214,170,95)]'
+                            ? 'text-[rgb(212,165,116)]'
                             : 'text-white/70 hover:text-white/90 hover:bg-white/[0.06]',
                         )}
                       >
@@ -264,7 +264,7 @@ export function MarketingNavbar() {
                   </Link>
                   <Link
                     href="/signup"
-                    className="shrink-0 rounded-full bg-[rgb(196,144,58)] px-7 py-3 text-[16px] font-semibold text-white hover:bg-[rgb(214,170,95)] transition-colors duration-300"
+                    className="btn-landing-primary shrink-0 rounded-full px-7 py-3 text-[16px]"
                   >
                     Create account
                   </Link>

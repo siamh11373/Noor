@@ -9,8 +9,8 @@ export function ClosingCTA() {
     >
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(196,144,58,0.16),transparent_60%)] blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-[240px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(76,175,80,0.1),transparent_60%)] blur-3xl" />
+        <div className="absolute left-1/2 top-0 h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(184,144,74,0.16),transparent_60%)] blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 h-[240px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(122,148,129,0.12),transparent_60%)] blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-[720px] px-5 text-center md:px-8">
@@ -19,7 +19,7 @@ export function ClosingCTA() {
         >
           Your week already has structure.{' '}
           <br className="hidden sm:block" />
-          <span className="text-[rgb(214,170,95)]">Now build on it.</span>
+          <span className="text-[rgb(212,165,116)]">Now build on it.</span>
         </h2>
         <p
           className={`${LANDING_BODY_FONT} mx-auto mt-6 max-w-[480px] text-[16px] leading-7 text-white/55`}
@@ -33,13 +33,13 @@ export function ClosingCTA() {
         >
           <Link
             href="/signup"
-            className="rounded-full bg-[rgb(196,144,58)] px-8 py-4 text-[16px] font-semibold text-white transition-all duration-300 hover:bg-[rgb(214,170,95)] hover:shadow-[0_6px_24px_rgba(196,144,58,0.35)]"
+            className="btn-landing-primary rounded-full px-8 py-4 text-[16px]"
           >
             Create your account
           </Link>
           <Link
             href="/login"
-            className="rounded-full border border-white/15 bg-white/5 px-8 py-4 text-[16px] font-medium text-white/75 backdrop-blur transition-all duration-300 hover:border-white/25 hover:bg-white/10"
+            className="btn-landing-ghost rounded-full px-8 py-4 text-[16px]"
           >
             Log in
           </Link>

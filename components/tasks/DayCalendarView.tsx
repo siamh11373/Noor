@@ -15,6 +15,7 @@ export function DayCalendarView({
   addCalendarTask,
   updateCalendarTask,
   toggleCalendarTask,
+  onTimeBlockDragSessionChange,
 }: {
   date: Date
   tasks: CalendarTask[]
@@ -24,6 +25,7 @@ export function DayCalendarView({
   addCalendarTask: (task: Omit<CalendarTask, 'id'>) => string
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   toggleCalendarTask: (id: string) => void
+  onTimeBlockDragSessionChange?: (active: boolean) => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const dateStr = toDateKey(date)
@@ -33,9 +35,14 @@ export function DayCalendarView({
   const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   useEffect(() => {
-    if (scrollRef.current && isToday) {
+    if (!scrollRef.current) return
+    if (isToday) {
+      // scroll to 2 hours before current time so current time is near top of viewport
       const scrollTo = Math.max(0, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
       scrollRef.current.scrollTop = scrollTo
+    } else {
+      // default past/future dates to 7 AM so the view opens at morning, not midnight
+      scrollRef.current.scrollTop = 7 * HOUR_HEIGHT
     }
   }, [isToday, currentMinutes])
 
@@ -58,6 +65,7 @@ export function DayCalendarView({
         addCalendarTask={addCalendarTask}
         updateCalendarTask={updateCalendarTask}
         toggleCalendarTask={toggleCalendarTask}
+        onTimeBlockDragSessionChange={onTimeBlockDragSessionChange}
       />
     </div>
   )

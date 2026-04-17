@@ -13,42 +13,42 @@ const pillars = [
   {
     icon: BookOpenText,
     label: 'Faith',
-    tone: 'bg-[rgba(76,175,80,0.14)] text-[rgb(154,214,158)]',
+    tone: 'bg-[rgba(122,148,129,0.18)] text-[rgb(172,212,182)]',
     description:
       "Track all five prayers, Quran reading, and dhikr — your day's spiritual anchor, not a streak to break.",
   },
   {
     icon: ListChecks,
     label: 'Tasks',
-    tone: 'bg-[rgba(61,111,191,0.14)] text-[rgb(166,191,235)]',
+    tone: 'bg-[rgba(107,138,168,0.18)] text-[rgb(162,196,224)]',
     description:
       'Anchor work to prayer windows instead of arbitrary hours. Tasks reset by salah, not midnight.',
   },
   {
     icon: Dumbbell,
     label: 'Fitness',
-    tone: 'bg-[rgba(230,81,0,0.14)] text-[rgb(255,183,145)]',
+    tone: 'bg-[rgba(200,135,96,0.18)] text-[rgb(240,186,148)]',
     description:
       'Log workouts, track recovery, and keep sessions tied to your weekly rhythm — not a gym bro app.',
   },
   {
     icon: HeartHandshake,
     label: 'Family',
-    tone: 'bg-[rgba(156,39,176,0.14)] text-[rgb(233,181,246)]',
+    tone: 'bg-[rgba(155,138,181,0.18)] text-[rgb(212,196,240)]',
     description:
       'Private logs for touchpoints, responsibilities, and check-ins. No social feed, no comparison traps.',
   },
   {
     icon: Sparkles,
     label: 'Guided onboarding',
-    tone: 'bg-[rgba(196,144,58,0.14)] text-[rgb(214,170,95)]',
+    tone: 'bg-[rgba(184,144,74,0.18)] text-[rgb(212,165,116)]',
     description:
       'A focused setup flow configures your madhab, prayer times, weekly defaults, and notification rhythm.',
   },
   {
     icon: ShieldCheck,
     label: 'Privacy first',
-    tone: 'bg-[rgba(76,175,80,0.14)] text-[rgb(154,214,158)]',
+    tone: 'bg-[rgba(122,148,129,0.18)] text-[rgb(172,212,182)]',
     description:
       'Only you see your data. Accountability partners receive composite scores — never raw details.',
   },
@@ -59,7 +59,7 @@ export function PillarsGrid() {
     <section id="pillars" className="relative z-10 scroll-mt-28 pb-24 pt-20 md:pb-32 md:pt-28">
       <div className="mx-auto max-w-[1200px] px-5 md:px-8">
         <p
-          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.28em] text-[rgb(214,170,95)]`}
+          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.28em] text-[rgb(212,165,116)]`}
         >
           Four pillars, one system
         </p>

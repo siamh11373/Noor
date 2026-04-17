@@ -16,10 +16,12 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { toDateKey } from '@/lib/date'
+import { groupCalendarTasksByPrayerSection, PRAYER_SECTION_SURFACE } from '@/lib/prayer-sections'
 import { applyOrdinalTimes } from '@/lib/task-schedule-order'
 import { timeToMinutes } from '@/lib/tasks-calendar'
 import { TaskPlannerSortableRow } from '@/components/tasks/TaskPlannerSortableRow'
-import type { CalendarTask } from '@/types'
+import { cn } from '@/lib/utils'
+import type { CalendarTask, PrayerTime } from '@/types'
 
 const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }),
@@ -28,6 +30,7 @@ const dropAnimation: DropAnimation = {
 export function TaskScheduleDayList({
   date,
   tasks,
+  prayerTimes,
   focusedTaskId,
   updateCalendarTask,
   toggleCalendarTask,
@@ -35,6 +38,7 @@ export function TaskScheduleDayList({
 }: {
   date: Date
   tasks: CalendarTask[]
+  prayerTimes: PrayerTime[]
   focusedTaskId?: string | null
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   toggleCalendarTask: (id: string) => void
@@ -87,6 +91,11 @@ export function TaskScheduleDayList({
 
   const activeTask = activeId ? byId.get(activeId) : undefined
 
+  const sectionGroups = useMemo(
+    () => groupCalendarTasksByPrayerSection(dayTasks, prayerTimes),
+    [dayTasks, prayerTimes],
+  )
+
   return (
     <DndContext
       sensors={sensors}
@@ -104,21 +113,37 @@ export function TaskScheduleDayList({
           Everything for this day in one list. Drag to set priority — open a task when you need times or details.
         </p>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ul className="mx-auto flex max-w-lg flex-col gap-2.5 pb-8">
-            {dayTasks.map((t) => (
-              <li key={t.id}>
-                <TaskPlannerSortableRow
-                  task={t}
-                  isSelected={focusedTaskId === t.id}
-                  onOpen={() => onFocusTask(t.id)}
-                  onToggle={() => toggleCalendarTask(t.id)}
-                />
-              </li>
+          <div className="mx-auto flex w-full max-w-lg flex-col pb-8">
+            {sectionGroups.map((g, gi) => (
+              <div
+                key={`${g.section}-${gi}`}
+                className={cn(
+                  '-mx-4 flex flex-col gap-2.5 px-4 sm:-mx-6 sm:px-6',
+                  PRAYER_SECTION_SURFACE[g.section],
+                )}
+              >
+                {g.tasks.map((t) => (
+                  <TaskPlannerSortableRow
+                    key={t.id}
+                    task={t}
+                    isSelected={focusedTaskId === t.id}
+                    onOpen={() => onFocusTask(t.id)}
+                    onToggle={() => toggleCalendarTask(t.id)}
+                  />
+                ))}
+              </div>
             ))}
-          </ul>
+          </div>
         </SortableContext>
         {dayTasks.length === 0 && (
-          <p className="py-10 text-center text-[13px] text-ink-ghost">No tasks yet — use + Add task to start.</p>
+          <div
+            className={cn(
+              '-mx-4 px-4 py-10 text-center sm:-mx-6 sm:px-6',
+              PRAYER_SECTION_SURFACE.pre,
+            )}
+          >
+            <p className="text-[13px] text-ink-ghost">No tasks yet — use + Add task to start.</p>
+          </div>
         )}
       </div>
       <DragOverlay dropAnimation={dropAnimation}>

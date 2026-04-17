@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { startOfWeekKey, toDateKey } from '@/lib/date'
+import { calendarTaskMasterId } from '@/lib/task-recurrence'
 import type {
   AccountabilityInvite,
   AccountabilityPeer,
@@ -371,6 +372,8 @@ interface SalahStore extends SalahDataState {
 
   addCalendarTask: (task: Omit<CalendarTask, 'id'>) => string
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
+  /** Apply many task patches in one state update (avoids stale reads between moves). */
+  applyCalendarTaskPatches: (patches: Array<{ id: string; patch: Partial<Omit<CalendarTask, 'id'>> }>) => void
   deleteCalendarTask: (id: string) => void
   toggleCalendarTask: (id: string) => void
 
@@ -881,20 +884,35 @@ export const useSalahStore = create<SalahStore>()((set, get) => ({
   },
 
   updateCalendarTask(id, patch) {
+    const mid = calendarTaskMasterId(id)
     set(s => ({
-      calendarTasks: s.calendarTasks.map(t => (t.id === id ? { ...t, ...patch } : t)),
+      calendarTasks: s.calendarTasks.map(t => (t.id === mid ? { ...t, ...patch } : t)),
     }))
   },
 
+  applyCalendarTaskPatches(patches) {
+    if (patches.length === 0) return
+    set(s => {
+      let list = s.calendarTasks
+      for (const { id, patch } of patches) {
+        const mid = calendarTaskMasterId(id)
+        list = list.map(t => (t.id === mid ? { ...t, ...patch } : t))
+      }
+      return { calendarTasks: list }
+    })
+  },
+
   deleteCalendarTask(id) {
+    const mid = calendarTaskMasterId(id)
     set(s => ({
-      calendarTasks: s.calendarTasks.filter(t => t.id !== id),
+      calendarTasks: s.calendarTasks.filter(t => t.id !== mid),
     }))
   },
 
   toggleCalendarTask(id) {
+    const mid = calendarTaskMasterId(id)
     set(s => ({
-      calendarTasks: s.calendarTasks.map(t => (t.id === id ? { ...t, completed: !t.completed } : t)),
+      calendarTasks: s.calendarTasks.map(t => (t.id === mid ? { ...t, completed: !t.completed } : t)),
     }))
   },
 

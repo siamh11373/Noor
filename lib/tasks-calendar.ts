@@ -1,9 +1,13 @@
 import type { PillarKey, PrayerTime } from '@/types'
 
 export const HOUR_HEIGHT = 60
-export const START_HOUR = 4
+export const START_HOUR = 0
 export const END_HOUR = 24
 export const TOTAL_HOURS = END_HOUR - START_HOUR
+
+/** Horizontal hour guide: strong at gutter, fades toward the right (space-separated RGB vars). */
+export const HOUR_GUIDE_GRADIENT =
+  'linear-gradient(90deg, rgb(var(--surface-border)) 0%, rgb(var(--surface-border) / 0.52) 14%, rgb(var(--surface-border) / 0.1) 44%, transparent 74%)'
 export const SNAP_MINUTES = 15
 export const MIN_DURATION_MIN = 15
 export const DEFAULT_NEW_TASK_MINUTES = 60

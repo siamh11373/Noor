@@ -32,12 +32,12 @@ export function HowItWorks() {
     <section id="flow" className="scroll-mt-28 bg-white py-20 md:py-28">
       <div className="mx-auto max-w-[960px] px-5 md:px-8">
         <p
-          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.28em] text-[rgb(196,144,58)]`}
+          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.28em] text-[rgb(184,144,74)]`}
         >
           How it works
         </p>
         <h2
-          className={`${LANDING_DISPLAY_FONT} mx-auto mt-5 max-w-[580px] text-center text-[32px] font-semibold leading-[1.14] tracking-tight text-[#1A1A1A] sm:text-[40px]`}
+          className={`${LANDING_DISPLAY_FONT} mx-auto mt-5 max-w-[580px] text-center text-[32px] font-semibold leading-[1.14] tracking-tight text-[#1C1E22] sm:text-[40px]`}
         >
           From signup to your first anchored week in four steps.
         </h2>
@@ -50,13 +50,13 @@ export function HowItWorks() {
             >
               {/* Connecting line */}
               {i < steps.length - 1 && (
-                <div className="absolute bottom-0 left-[23px] top-[52px] w-px bg-[#EBEBEB]" />
+                <div className="absolute bottom-0 left-[23px] top-[52px] w-px bg-[#E8E3DB]" />
               )}
 
               {/* Step number */}
-              <div className="relative z-10 flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-2xl border border-[rgba(196,144,58,0.2)] bg-[rgba(196,144,58,0.08)]">
+              <div className="relative z-10 flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-2xl border border-[rgba(184,144,74,0.2)] bg-[rgba(184,144,74,0.08)]">
                 <span
-                  className={`${LANDING_BODY_FONT} text-[14px] font-bold text-[rgb(196,144,58)]`}
+                  className={`${LANDING_BODY_FONT} text-[14px] font-bold text-[rgb(184,144,74)]`}
                 >
                   {step.number}
                 </span>
@@ -65,12 +65,12 @@ export function HowItWorks() {
               {/* Content */}
               <div className="pt-1.5">
                 <h3
-                  className={`${LANDING_BODY_FONT} text-[17px] font-semibold text-[#1A1A1A]`}
+                  className={`${LANDING_BODY_FONT} text-[17px] font-semibold text-[#1C1E22]`}
                 >
                   {step.title}
                 </h3>
                 <p
-                  className={`${LANDING_BODY_FONT} mt-2 text-[14px] leading-7 text-[#6B6B6B]`}
+                  className={`${LANDING_BODY_FONT} mt-2 text-[14px] leading-7 text-[#6B7280]`}
                 >
                   {step.description}
                 </p>

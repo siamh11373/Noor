@@ -51,11 +51,18 @@ export function TopNav() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-surface-border bg-surface-bg/92 backdrop-blur">
-      <div className="flex h-[60px] items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <Link href="/faith" className="flex items-center gap-3">
-            <Image src="/logo.png" alt="" width={36} height={36} className="rounded-full" />
-            <div>
+      <div className="flex h-[68px] items-center justify-between px-4 sm:h-[76px] sm:px-6">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+          <Link href="/faith" className="flex shrink-0 items-center gap-3.5 sm:gap-4">
+            <Image
+              src="/logo.png"
+              alt=""
+              width={56}
+              height={56}
+              className="h-12 w-12 shrink-0 rounded-full sm:h-14 sm:w-14"
+              sizes="(max-width: 640px) 48px, 56px"
+            />
+            <div className="min-w-0">
               <p className="text-[15px] font-semibold tracking-tight text-ink-primary">
                 Noor
               </p>
@@ -63,7 +70,7 @@ export function TopNav() {
             </div>
           </Link>
 
-          <nav className="flex gap-1 rounded-2xl border border-surface-border bg-surface-card p-1 shadow-card">
+          <nav className="flex min-w-0 shrink gap-1 rounded-2xl border border-surface-border bg-surface-card p-1 shadow-card transition-shadow duration-300 ease-out">
             {NAV_ITEMS.map(item => {
               const active = pathname.startsWith(item.href)
               return (
@@ -71,10 +78,10 @@ export function TopNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'px-3 py-1.5 rounded-md text-[13px] transition-all',
+                    'rounded-[10px] px-3 py-1.5 text-[13px] transition-[transform,background-color,color,box-shadow] duration-200 ease-out active:scale-[0.985]',
                     active
-                      ? cn('font-medium', ACCENT_CLASSES[item.accent])
-                      : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-muted'
+                      ? cn('font-medium shadow-control', ACCENT_CLASSES[item.accent])
+                      : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-muted hover:shadow-control',
                   )}
                 >
                   {item.label}
@@ -87,24 +94,27 @@ export function TopNav() {
         {/* Right: date + avatar */}
         <div className="flex items-center gap-2.5">
           <span className={cn(
-            'hidden rounded-full border px-3 py-1 text-[11px] font-medium md:inline-flex',
+            'hidden rounded-full border px-3 py-1 text-[11px] font-medium shadow-control transition-[box-shadow,transform] duration-200 ease-out md:inline-flex',
             cloudSyncStatus === 'synced'
               ? 'border-faith-border bg-faith-light text-faith-text'
               : cloudSyncStatus === 'syncing'
               ? 'border-brand-200 bg-brand-50 text-brand-500'
               : cloudSyncStatus === 'error'
               ? 'border-fitness-border bg-fitness-light text-fitness-text'
-              : 'border-surface-border bg-surface-card text-ink-ghost'
+              : 'border-surface-border bg-surface-card text-ink-ghost',
           )}>
             {syncLabel}
           </span>
           <ThemeToggle />
-          <span className="rounded-md border border-surface-border bg-surface-card px-3 py-1 text-[12px] text-ink-faint">
+          <span className="rounded-[10px] border border-surface-border bg-surface-card px-3 py-1 text-[12px] text-ink-faint shadow-control transition-shadow duration-200 ease-out">
             {today || '\u00A0'}
           </span>
           <MenuRoot>
             <MenuTrigger asChild>
-              <button className="w-[30px] h-[30px] rounded-full bg-brand-100 border border-surface-border flex items-center justify-center text-[11px] font-semibold text-brand-400 outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand-300">
+              <button
+                type="button"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-surface-border bg-brand-100 text-[11px] font-semibold text-brand-400 shadow-control outline-none transition-[transform,box-shadow] duration-200 ease-out hover:shadow-control-hover active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-brand-300"
+              >
                 {initial}
               </button>
             </MenuTrigger>

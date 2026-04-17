@@ -6,8 +6,8 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
   defaultDropAnimationSideEffects,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
@@ -25,6 +25,7 @@ import { toDateKey } from '@/lib/date'
 import { applyOrdinalTimes } from '@/lib/task-schedule-order'
 import { TaskPlannerSortableRow } from '@/components/tasks/TaskPlannerSortableRow'
 import { timeToMinutes } from '@/lib/tasks-calendar'
+import { useSalahStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import type { CalendarTask } from '@/types'
 
@@ -47,6 +48,45 @@ function findDayForTaskId(snapshot: Record<string, string[]>, taskId: string): s
 
 const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }),
+}
+
+/**
+ * Tasks moving from another day only get `date` updated — startTime is preserved (clock time).
+ * Tasks already on this day get ordinal startTime updates for list order (Task mode).
+ */
+function computeDayOrderPatches(
+  dateKey: string,
+  orderedIds: string[],
+  allTasks: CalendarTask[],
+): Array<{ id: string; patch: Partial<Omit<CalendarTask, 'id'>> }> {
+  const byId = new Map(allTasks.map((t) => [t.id, t]))
+  const ordered = orderedIds.map((id) => byId.get(id)).filter(Boolean) as CalendarTask[]
+  if (ordered.length === 0) return []
+
+  const patches: Array<{ id: string; patch: Partial<Omit<CalendarTask, 'id'>> }> = []
+  const fromElsewhere = ordered.filter((t) => t.date !== dateKey)
+  for (const t of fromElsewhere) {
+    patches.push({ id: t.id, patch: { date: dateKey } })
+  }
+
+  const nativeIds = new Set(ordered.filter((t) => t.date === dateKey).map((t) => t.id))
+  const nativeOrdered: CalendarTask[] = []
+  for (const id of orderedIds) {
+    const t = byId.get(id)
+    if (t && nativeIds.has(t.id)) nativeOrdered.push(t)
+  }
+
+  if (nativeOrdered.length === 0) return patches
+
+  const ordinals = applyOrdinalTimes(nativeOrdered.map((t) => ({ ...t, date: dateKey })))
+  for (let i = 0; i < nativeOrdered.length; i++) {
+    const t = nativeOrdered[i]!
+    const next = ordinals[i]!
+    if (t.startTime !== next.startTime) {
+      patches.push({ id: t.id, patch: { startTime: next.startTime } })
+    }
+  }
+  return patches
 }
 
 function DayColumn({
@@ -74,7 +114,14 @@ function DayColumn({
   const ids = tasks.map((t) => t.id)
 
   return (
-    <div className={cn('flex min-w-0 flex-1 flex-col border-l border-surface-border', isToday && 'bg-brand-50/25')}>
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'flex min-w-0 flex-1 flex-col border-l border-surface-border',
+        isToday && 'bg-brand-50/25',
+        isOver && 'bg-brand-50/30 dark:bg-brand-950/20',
+      )}
+    >
       <button
         type="button"
         onClick={onOpenDay}
@@ -85,13 +132,7 @@ function DayColumn({
         </p>
         <p className={cn('text-[16px] font-semibold', isToday ? 'text-brand-500' : 'text-ink-primary')}>{dayNum}</p>
       </button>
-      <div
-        ref={setNodeRef}
-        className={cn(
-          'min-h-0 flex-1 overflow-y-auto px-1 py-2 transition-colors',
-          isOver && 'bg-brand-50/30 dark:bg-brand-950/20',
-        )}
-      >
+      <div className="min-h-0 flex-1 overflow-y-auto px-1 py-2">
         <SortableContext id={dateKey} items={ids} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-1.5">
             {tasks.map((t) => (
@@ -135,7 +176,6 @@ export function TaskScheduleWeekBoard({
   anchorDate,
   tasks,
   focusedTaskId,
-  updateCalendarTask,
   toggleCalendarTask,
   onFocusTask,
   onOpenDay,
@@ -143,7 +183,6 @@ export function TaskScheduleWeekBoard({
   anchorDate: Date
   tasks: CalendarTask[]
   focusedTaskId?: string | null
-  updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   toggleCalendarTask: (id: string) => void
   onFocusTask: (id: string) => void
   onOpenDay: (d: Date) => void
@@ -176,21 +215,6 @@ export function TaskScheduleWeekBoard({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const applyDayOrder = useCallback(
-    (dateKey: string, orderedIds: string[]) => {
-      const ordered = orderedIds.map((id) => taskById.get(id)).filter(Boolean) as CalendarTask[]
-      const normalized = ordered.map((t) => ({ ...t, date: dateKey }))
-      const updates = applyOrdinalTimes(normalized)
-      updates.forEach((u, i) => {
-        const t = ordered[i]!
-        const patch: Partial<Omit<CalendarTask, 'id'>> = { startTime: u.startTime }
-        if (t.date !== dateKey) patch.date = dateKey
-        updateCalendarTask(u.id, patch)
-      })
-    },
-    [taskById, updateCalendarTask],
-  )
-
   const onDragStart = useCallback((e: DragStartEvent) => {
     setActiveId(String(e.active.id))
   }, [])
@@ -219,36 +243,43 @@ export function TaskScheduleWeekBoard({
       const fromIdx = fromList.indexOf(activeTaskId)
       if (fromIdx < 0) return
 
+      let patches: Array<{ id: string; patch: Partial<Omit<CalendarTask, 'id'>> }> = []
+
       if (activeContainer === overContainer) {
         if (parseDayDroppable(overId)) {
           const rest = fromList.filter((id) => id !== activeTaskId)
           rest.push(activeTaskId)
-          applyDayOrder(activeContainer, rest)
-          return
+          patches = computeDayOrderPatches(activeContainer, rest, tasks)
+        } else {
+          const toIdx = fromList.indexOf(overId)
+          if (toIdx < 0 || overId === activeTaskId) return
+          const newOrder = arrayMove(fromList, fromIdx, toIdx)
+          patches = computeDayOrderPatches(activeContainer, newOrder, tasks)
         }
-        const toIdx = fromList.indexOf(overId)
-        if (toIdx < 0 || overId === activeTaskId) return
-        const newOrder = arrayMove(fromList, fromIdx, toIdx)
-        applyDayOrder(activeContainer, newOrder)
-        return
+      } else {
+        const toList = [...(snap[overContainer] ?? [])]
+        fromList.splice(fromIdx, 1)
+        let insertAt = toList.length
+        if (overTaskId) {
+          const i = toList.indexOf(overTaskId)
+          if (i >= 0) insertAt = i
+        }
+        toList.splice(insertAt, 0, activeTaskId)
+
+        snap[activeContainer] = fromList
+        snap[overContainer] = toList
+
+        patches = [
+          ...computeDayOrderPatches(activeContainer, fromList, tasks),
+          ...computeDayOrderPatches(overContainer, toList, tasks),
+        ]
       }
 
-      const toList = [...(snap[overContainer] ?? [])]
-      fromList.splice(fromIdx, 1)
-      let insertAt = toList.length
-      if (overTaskId) {
-        const i = toList.indexOf(overTaskId)
-        if (i >= 0) insertAt = i
+      if (patches.length > 0) {
+        useSalahStore.getState().applyCalendarTaskPatches(patches)
       }
-      toList.splice(insertAt, 0, activeTaskId)
-
-      snap[activeContainer] = fromList
-      snap[overContainer] = toList
-
-      applyDayOrder(activeContainer, fromList)
-      applyDayOrder(overContainer, toList)
     },
-    [applyDayOrder, snapshot],
+    [snapshot, tasks],
   )
 
   const activeTask = activeId ? taskById.get(activeId) : undefined
@@ -256,7 +287,7 @@ export function TaskScheduleWeekBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={rectIntersection}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}

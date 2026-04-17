@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatTimeDisplay, minutesToTime, timeToMinutes } from '@/lib/tasks-calendar'
 import { cn } from '@/lib/utils'
+import { TaskRecurrenceSection } from '@/components/tasks/TaskRecurrenceSection'
 import type { CalendarTask } from '@/types'
 
 const EMPTY_TITLE = '(No title)'
@@ -73,12 +74,15 @@ function computePanelPlacement(rect: DOMRect, panelW: number, panelH: number): {
 export function TaskDayPanel({
   task,
   weekdayDateLabel,
+  recurrenceAnchorDateKey,
   onPatch,
   onDelete,
   onClose,
 }: {
   task: CalendarTask
   weekdayDateLabel: string
+  /** Stored series anchor (master `date`); used for recurrence defaults & summaries. */
+  recurrenceAnchorDateKey: string
   onPatch: (patch: Partial<Omit<CalendarTask, 'id'>>) => void
   onDelete: () => void
   onClose: () => void
@@ -87,6 +91,8 @@ export function TaskDayPanel({
   const [note, setNote] = useState(task.note ?? '')
   const rootRef = useRef<HTMLDivElement>(null)
   const [fixedPos, setFixedPos] = useState<{ left: number; top: number } | null>(null)
+  const [entered, setEntered] = useState(false)
+  const [exiting, setExiting] = useState(false)
 
   const syncPanelPosition = useCallback(() => {
     const root = rootRef.current
@@ -112,11 +118,20 @@ export function TaskDayPanel({
     setNote(task.note ?? '')
   }, [task.id, task.title, task.note])
 
+  /** Fade in when this panel instance mounts (new task / key), without tying to scroll-driven position updates. */
+  useEffect(() => {
+    setEntered(false)
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [task.id])
+
   useLayoutEffect(() => {
     syncPanelPosition()
     const id = requestAnimationFrame(() => syncPanelPosition())
     return () => cancelAnimationFrame(id)
-  }, [syncPanelPosition, task.date, task.startTime, task.duration])
+  }, [syncPanelPosition, task.date, task.startTime, task.duration, task.recurrence])
 
   useEffect(() => {
     window.addEventListener('resize', syncPanelPosition)
@@ -135,23 +150,6 @@ export function TaskDayPanel({
     return () => ro.disconnect()
   }, [syncPanelPosition])
 
-  useEffect(() => {
-    function onDocDown(e: MouseEvent) {
-      const t = e.target as HTMLElement
-      if (t.closest('[data-task-day-grid]')) return
-      if (rootRef.current && !rootRef.current.contains(t)) {
-        const trimmed = title.trim()
-        onPatch({
-          title: trimmed.length ? trimmed : EMPTY_TITLE,
-          note: note.trim() || undefined,
-        })
-        onClose()
-      }
-    }
-    document.addEventListener('mousedown', onDocDown)
-    return () => document.removeEventListener('mousedown', onDocDown)
-  }, [title, note, onPatch, onClose])
-
   const flushTitleNote = useCallback(() => {
     const trimmed = title.trim()
     onPatch({
@@ -160,19 +158,56 @@ export function TaskDayPanel({
     })
   }, [title, note, onPatch])
 
+  const FADE_MS = 220
+
+  const requestClose = useCallback(() => {
+    if (exiting) return
+    setExiting(true)
+    flushTitleNote()
+    window.setTimeout(() => {
+      onClose()
+    }, FADE_MS)
+  }, [exiting, flushTitleNote, onClose])
+
+  const requestDelete = useCallback(() => {
+    if (exiting) return
+    setExiting(true)
+    flushTitleNote()
+    window.setTimeout(() => {
+      onDelete()
+    }, FADE_MS)
+  }, [exiting, flushTitleNote, onDelete])
+
+  useEffect(() => {
+    function onDocDown(e: MouseEvent) {
+      const t = e.target as HTMLElement
+      if (t.closest('[data-task-day-grid]')) return
+      if (t.closest('[data-recurrence-date-popover]')) return
+      if (rootRef.current && !rootRef.current.contains(t)) {
+        requestClose()
+      }
+    }
+    document.addEventListener('mousedown', onDocDown)
+    return () => document.removeEventListener('mousedown', onDocDown)
+  }, [requestClose])
+
   const rangeLine = `${weekdayDateLabel} ${formatTimeDisplay(task.startTime)} – ${endTimeLabel(task.startTime, task.duration)}`
 
   return (
     <div
       ref={rootRef}
+      data-task-day-panel
       style={fixedPos ? { left: fixedPos.left, top: fixedPos.top } : undefined}
       className={cn(
         'fixed z-[60] flex w-[min(380px,calc(100vw-1.5rem))] flex-col rounded-2xl border border-surface-border bg-surface-card',
-        'shadow-[0_8px_40px_rgba(0,0,0,0.12)] pointer-events-auto max-h-[min(560px,calc(100vh-120px))] overflow-hidden',
-        fixedPos ? 'transition-[left,top] duration-150 ease-out' : 'right-3 top-[88px] transition-opacity duration-150',
+        'shadow-[0_8px_40px_rgba(0,0,0,0.12)] max-h-[min(620px,calc(100vh-96px))] overflow-hidden',
+        'transition-opacity duration-300 ease-out motion-reduce:transition-none',
+        entered && !exiting ? 'opacity-100' : 'opacity-0',
+        entered && !exiting ? 'pointer-events-auto' : 'pointer-events-none',
+        !fixedPos && 'right-3 top-[88px]',
       )}
     >
-      <div className="flex items-center justify-between border-b border-surface-border px-3 py-2">
+      <div className="flex shrink-0 items-center justify-between border-b border-surface-border px-3 py-2">
         <span className="text-ink-ghost select-none" aria-hidden>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-50">
             <path d="M4 8h16M4 16h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -180,10 +215,7 @@ export function TaskDayPanel({
         </span>
         <button
           type="button"
-          onClick={() => {
-            flushTitleNote()
-            onClose()
-          }}
+          onClick={requestClose}
           className="rounded-lg p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink-primary"
           aria-label="Close panel"
         >
@@ -193,7 +225,7 @@ export function TaskDayPanel({
         </button>
       </div>
 
-      <div className="space-y-3 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pb-5">
         <input
           autoFocus
           value={title}
@@ -261,6 +293,8 @@ export function TaskDayPanel({
           </div>
         </div>
 
+        <TaskRecurrenceSection task={task} anchorDateKey={recurrenceAnchorDateKey} onPatch={onPatch} />
+
         <div className="flex gap-3">
           <span className="mt-1 shrink-0 text-ink-ghost" aria-hidden>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -278,16 +312,13 @@ export function TaskDayPanel({
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-surface-border px-4 py-3">
-        <button type="button" onClick={onDelete} className="text-[12px] font-medium text-fitness-text hover:underline">
+      <div className="mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-surface-border px-4 py-3">
+        <button type="button" onClick={requestDelete} className="text-[12px] font-medium text-fitness-text hover:underline">
           Delete
         </button>
         <button
           type="button"
-          onClick={() => {
-            flushTitleNote()
-            onClose()
-          }}
+          onClick={requestClose}
           className="btn-primary rounded-full px-5 py-2 text-[13px] font-semibold"
         >
           Save

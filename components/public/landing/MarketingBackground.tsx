@@ -186,8 +186,8 @@ function GrainientCanvas({ className }: { className?: string }) {
         uSaturation: { value: 1.0 },
         uCenterOffset: { value: new Float32Array([0.0, -0.14]) },
         uZoom: { value: 0.92 },
-        uColor1: { value: new Float32Array(hexToRgb('#6FA163')) },
-        uColor2: { value: new Float32Array(hexToRgb('#C4903A')) },
+        uColor1: { value: new Float32Array(hexToRgb('#7A9481')) },
+        uColor2: { value: new Float32Array(hexToRgb('#B8904A')) },
         uColor3: { value: new Float32Array(hexToRgb('#08120F')) },
       },
     })
@@ -259,7 +259,7 @@ export function MarketingBackground({ className }: { className?: string }) {
 
   return (
     <div className={cn('absolute inset-0 overflow-hidden', className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(196,144,58,0.34),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(76,175,80,0.24),transparent_24%),linear-gradient(180deg,#07110f_0%,#0d1714_44%,#11231d_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(184,144,74,0.34),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(122,148,129,0.24),transparent_24%),linear-gradient(180deg,#07110f_0%,#0d1714_44%,#11231d_100%)]" />
       {shouldAnimate ? <GrainientCanvas className="absolute inset-0 opacity-70" /> : null}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_34%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,rgba(6,12,11,0.1)_0%,rgba(6,12,11,0.58)_100%)]" />
       <div

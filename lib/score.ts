@@ -128,14 +128,14 @@ export function ringCircumference(radius = 36): number {
 export function scoreColorClass(score: number): string {
   if (score >= 91) return 'text-brand-400'
   if (score >= 71) return 'text-faith'
-  if (score >= 41) return 'text-amber-500'
+  if (score >= 41) return 'text-brand-300'
   return 'text-ink-ghost'
 }
 
 // Stroke color hex for SVG ring
 export function scoreStrokeColor(score: number): string {
-  if (score >= 91) return '#C4903A'
-  if (score >= 71) return '#4CAF50'
-  if (score >= 41) return '#F59E0B'
-  return '#B0B0A8'
+  if (score >= 91) return '#B8904A'
+  if (score >= 71) return '#7A9481'
+  if (score >= 41) return '#D4A574'
+  return '#9CA0A8'
 }

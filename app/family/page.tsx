@@ -128,7 +128,7 @@ function FamilyConnections() {
     <div>
       <button
         onClick={handleQuick}
-        className="w-full py-3.5 px-4 mb-3 bg-family-light border border-family-border rounded-xl text-[14px] font-semibold text-family-text hover:bg-family-light/70 active:scale-[.99] transition-all"
+        className="btn-family-accent mb-3"
       >
         ✓ Log a family connection today
       </button>
@@ -141,7 +141,7 @@ function FamilyConnections() {
           placeholder="Who did you connect with? How?"
           className="input-base"
         />
-        <button onClick={handleAdd} className="bg-family hover:opacity-90 text-white rounded-lg px-3.5 font-bold text-base transition-opacity">
+        <button onClick={handleAdd} className="btn-family-primary px-3.5">
           +
         </button>
       </div>
@@ -487,7 +487,7 @@ function FamilyWinInput() {
         placeholder="Log a win..."
         className="input-base text-[11px] py-1.5"
       />
-      <button onClick={handleAdd} className="bg-brand-400 text-white rounded-lg px-2.5 font-bold text-sm">+</button>
+      <button onClick={handleAdd} className="btn-primary px-2.5 py-1.5">+</button>
     </div>
   )
 }

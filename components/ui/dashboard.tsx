@@ -63,23 +63,32 @@ export function DashboardPanel({
   action,
   children,
   className,
+  /** Fill remaining panel height so nested lists can scroll (grid twin columns stay aligned). */
+  stretchContent,
 }: {
   title: string
   description?: string
   action?: React.ReactNode
   children: React.ReactNode
   className?: string
+  stretchContent?: boolean
 }) {
   return (
-    <section className={cn('rounded-[26px] border border-surface-border bg-surface-card p-5 shadow-card', className)}>
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <section
+      className={cn(
+        'rounded-[26px] border border-surface-border bg-surface-card p-5 shadow-card',
+        stretchContent && 'flex min-h-0 flex-col',
+        className,
+      )}
+    >
+      <div className={cn('mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between', stretchContent && 'shrink-0')}>
         <div>
           <h2 className="text-[15px] font-semibold text-ink-primary">{title}</h2>
           {description && <p className="mt-1 text-[13px] text-ink-secondary">{description}</p>}
         </div>
         {action}
       </div>
-      {children}
+      {stretchContent ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : children}
     </section>
   )
 }

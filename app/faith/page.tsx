@@ -16,6 +16,7 @@ import {
   ProgressBar,
   ScoreRing,
 } from '@/components/ui'
+import { TasksForToday } from '@/components/faith/TasksForToday'
 import {
   Dialog,
   DialogContent,
@@ -123,18 +124,6 @@ function PrayerButtons() {
               {name.charAt(0).toUpperCase() + name.slice(1)}
             </span>
             <span className="text-[10px] text-ink-ghost">{pt?.formattedTime ?? '--:--'}</span>
-            <span
-              className={cn(
-                'text-[9px] mt-1.5 px-1.5 py-0.5 rounded',
-                prayed
-                  ? 'bg-faith-light text-faith-text'
-                  : isNext
-                    ? 'bg-brand-100 text-brand-500'
-                    : 'bg-surface-muted text-ink-ghost',
-              )}
-            >
-              {pt?.anchor ?? ''}
-            </span>
           </button>
         )
       })}
@@ -165,61 +154,6 @@ function OSScoresGrid({ pillars }: { pillars: PillarScores }) {
             {String(pillars[item.key]).padStart(2, '0')}
           </p>
           <p className="mt-1 text-[11px] text-ink-ghost">{item.hint}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   CENTER — GOALS THIS WEEK
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-function GoalsList() {
-  const { getWeeklyRecord, toggleGoal } = useSalahStore()
-  const goals = getWeeklyRecord().goals
-
-  if (!goals.length) {
-    return (
-      <div className="rounded-xl border border-dashed border-surface-border bg-surface-raised/40 px-4 py-6 text-center">
-        <p className="text-[13px] text-ink-muted">No goals set this week</p>
-        <p className="mt-1 text-[11px] text-ink-ghost">
-          Add goals from the Tasks page
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-2">
-      {goals.slice(0, 5).map((goal) => (
-        <div
-          key={goal.id}
-          className="flex items-start gap-3 rounded-xl border border-surface-border bg-surface-raised px-3.5 py-3"
-        >
-          <button
-            onClick={() => toggleGoal(goal.id)}
-            className={cn(
-              'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all',
-              goal.completed
-                ? 'border-faith bg-faith'
-                : 'border-surface-border hover:border-ink-ghost',
-            )}
-          >
-            {goal.completed && (
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </button>
-          <div>
-            <p className={cn('text-[13px] font-medium', goal.completed ? 'text-ink-ghost line-through' : 'text-ink-primary')}>
-              {goal.text}
-            </p>
-            <p className="text-[10px] text-ink-ghost capitalize">
-              {goal.pillar === 'career' ? 'tasks' : goal.pillar}
-            </p>
-          </div>
         </div>
       ))}
     </div>
@@ -311,7 +245,7 @@ function QuranLog() {
           placeholder="What did you read? (e.g. Al-Baqarah p.28–31)"
           className="input-base"
         />
-        <button onClick={handleAdd} className="bg-brand-400 hover:bg-brand-500 text-white rounded-lg px-3.5 font-bold text-base transition-colors">
+        <button onClick={handleAdd} className="btn-primary px-3.5">
           +
         </button>
       </div>
@@ -667,10 +601,11 @@ export default function FaithPage() {
               </DashboardPanel>
 
               <DashboardPanel
-                title="Goals this week"
-                description="Tasks carry their pillar so the week stays balanced."
+                stretchContent
+                title="Tasks for Today"
+                description="From your planner for today — check off, add a line, or open Tasks for the full view."
               >
-                <GoalsList />
+                <TasksForToday />
               </DashboardPanel>
             </div>
 

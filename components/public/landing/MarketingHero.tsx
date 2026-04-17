@@ -10,7 +10,7 @@ export function MarketingHero() {
       <div className="relative z-10 mx-auto max-w-[1400px] px-5 md:px-8">
         {/* Kicker */}
         <p
-          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.3em] text-[rgb(214,170,95)]`}
+          className={`${LANDING_BODY_FONT} text-center text-[12px] font-semibold uppercase tracking-[0.3em] text-[rgb(212,165,116)]`}
         >
           Prayer-centered operating system
         </p>
@@ -21,7 +21,7 @@ export function MarketingHero() {
             The{' '}
           </span>
           <span
-            className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(214,170,95)]`}
+            className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(212,165,116)]`}
           >
             light
           </span>
@@ -30,7 +30,7 @@ export function MarketingHero() {
             that anchors your week around{' '}
           </span>
           <span
-            className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(154,214,158)]`}
+            className={`${LANDING_DISPLAY_FONT} italic font-medium text-[rgb(172,212,182)]`}
           >
             salah
           </span>
@@ -54,13 +54,13 @@ export function MarketingHero() {
         >
           <Link
             href="/signup"
-            className="rounded-full bg-[rgb(196,144,58)] px-7 py-3.5 text-[15px] font-semibold text-white transition-all duration-300 hover:bg-[rgb(214,170,95)] hover:shadow-[0_6px_24px_rgba(196,144,58,0.3)]"
+            className="btn-landing-primary rounded-full px-7 py-3.5 text-[15px]"
           >
             Start your setup
           </Link>
           <a
             href="#preview"
-            className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-[15px] font-medium text-white/80 backdrop-blur transition-all duration-300 hover:border-white/25 hover:bg-white/10"
+            className="btn-landing-ghost rounded-full px-7 py-3.5 text-[15px]"
           >
             See the dashboard
           </a>

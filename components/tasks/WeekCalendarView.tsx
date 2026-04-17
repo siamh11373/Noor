@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { toDateKey } from '@/lib/date'
 import { CalendarDayColumn, type WeekDragPreview } from '@/components/tasks/CalendarDayColumn'
-import { HOUR_HEIGHT, START_HOUR, TOTAL_HOURS, formatHour } from '@/lib/tasks-calendar'
+import { HOUR_GUIDE_GRADIENT, HOUR_HEIGHT, START_HOUR, TOTAL_HOURS, formatHour } from '@/lib/tasks-calendar'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PrayerTime } from '@/types'
 
@@ -33,6 +33,7 @@ export function WeekCalendarView({
   updateCalendarTask,
   toggleCalendarTask,
   onOpenDay,
+  onTimeBlockDragSessionChange,
 }: {
   anchorDate: Date
   tasks: CalendarTask[]
@@ -43,6 +44,7 @@ export function WeekCalendarView({
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   toggleCalendarTask: (id: string) => void
   onOpenDay: (d: Date) => void
+  onTimeBlockDragSessionChange?: (active: boolean) => void
 }) {
   const weekDates = getWeekDates(anchorDate)
   const today = new Date()
@@ -90,12 +92,30 @@ export function WeekCalendarView({
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         <div data-week-timeline-row className="relative flex" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
-          <div className="relative w-14 shrink-0">
+          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-              <div key={i} className="absolute inset-x-0 text-right" style={{ top: i * HOUR_HEIGHT }}>
-                <span className="-translate-y-[6px] inline-block pr-2 text-[10px] text-ink-ghost">
-                  {formatHour(START_HOUR + i)}
-                </span>
+              <div
+                key={`hg-${i}`}
+                className="absolute"
+                style={{
+                  left: 'calc(3.5rem - 8px)',
+                  right: 0,
+                  top: i * HOUR_HEIGHT,
+                  transform: 'translateY(-50%)',
+                  height: 1,
+                  background: HOUR_GUIDE_GRADIENT,
+                }}
+              />
+            ))}
+          </div>
+          <div className="relative z-[1] w-14 shrink-0 border-r border-surface-border/80">
+            {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
+              <div
+                key={i}
+                className="absolute inset-x-0 flex justify-end pr-2"
+                style={{ top: i * HOUR_HEIGHT, transform: 'translateY(-50%)' }}
+              >
+                <span className="text-[10px] tabular-nums text-ink-ghost">{formatHour(START_HOUR + i)}</span>
               </div>
             ))}
           </div>
@@ -108,7 +128,7 @@ export function WeekCalendarView({
                 key={colIdx}
                 data-calendar-column-date={dateStr}
                 className={cn(
-                  'relative min-w-0 flex-1 border-l border-surface-border',
+                  'relative z-[1] min-w-0 flex-1 border-l border-surface-border',
                   colIsToday && 'bg-brand-50/30',
                 )}
               >
@@ -126,6 +146,7 @@ export function WeekCalendarView({
                   toggleCalendarTask={toggleCalendarTask}
                   weekDragPreview={weekDragPreview}
                   setWeekDragPreview={setWeekDragPreview}
+                  onTimeBlockDragSessionChange={onTimeBlockDragSessionChange}
                 />
               </div>
             )

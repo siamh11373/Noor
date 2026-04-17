@@ -1,0 +1,1101 @@
+<!--
+  ============================================================
+  NOOR — Supabase Authentication Email Templates
+  ============================================================
+  Paste each template's HTML into:
+  Supabase Dashboard → Authentication → Email Templates
+
+  Templates included:
+  1. Confirm signup     (subject below)
+  2. Reset password     (subject below)
+  3. Magic link         (subject below)
+  4. Change email       (subject below)
+  5. Invite user        (subject below)
+
+  Supabase template variables used:
+  {{ .ConfirmationURL }} — the full action URL
+  {{ .Email }}           — the recipient's email address
+  {{ .SiteURL }}         — your site base URL (set in Auth settings)
+  {{ .Token }}           — 6-digit OTP (if you use OTP flow)
+
+  Logo images: use the canonical host (https://www.letnoorin.com/...).
+  Apex letnoorin.com 307-redirects to www; many email clients do NOT
+  follow redirects for images → broken logo. Do not use {{ .SiteURL }}
+  for the logo <img> unless Site URL is exactly https://www.letnoorin.com
+  ============================================================
+-->
+
+
+
+
+<!-- ============================================================ -->
+<!-- 1. CONFIRM SIGNUP                                            -->
+<!-- Subject: Confirm your Noor account                          -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Confirm your Noor account</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 620px) {
+      .email-body { padding: 24px 16px !important; }
+      .email-card { border-radius: 16px !important; padding: 32px 24px !important; }
+      .email-heading { font-size: 24px !important; line-height: 1.2 !important; }
+      .email-btn { padding: 14px 28px !important; font-size: 15px !important; }
+      .email-logo-text { font-size: 24px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#06100A;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="background-color:#06100A;min-height:100%;width:100%;">
+  <tr>
+    <td class="email-body" align="center" valign="top" style="padding:48px 24px;">
+
+      <!-- Width wrapper -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+        style="max-width:600px;width:100%;">
+
+        <!-- ─── Logo ─── -->
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://www.letnoorin.com/logo-white.png" alt="Noor" width="38" height="38"
+                    style="border-radius:50%;display:block;width:38px;height:38px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span class="email-logo-text"
+                    style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;
+                           letter-spacing:-0.03em;color:rgba(247,243,236,0.95);white-space:nowrap;">
+                    Noor
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ─── Card ─── -->
+        <tr>
+          <td class="email-card"
+            style="background-color:#0C1812;border:1px solid rgba(255,255,255,0.1);
+                   border-radius:24px;padding:48px 40px;">
+
+            <!-- Eyebrow pill -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="display:inline-block;background-color:rgba(184,144,74,0.14);
+                                border:1px solid rgba(184,144,74,0.3);border-radius:100px;
+                                padding:5px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:10px;font-weight:700;letter-spacing:0.22em;
+                                text-transform:uppercase;color:rgb(212,165,116);">
+                    Create Account
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Gold gradient divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:28px;">
+              <tr>
+                <td style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(184,144,74,0.35) 50%,transparent 100%);
+                           font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Heading -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:14px;">
+                  <h1 class="email-heading"
+                    style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;
+                           font-weight:600;line-height:1.15;letter-spacing:-0.03em;
+                           color:rgba(247,243,236,0.95);">
+                    Verify your email address
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:36px;">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:15px;line-height:1.75;color:rgba(235,228,212,0.58);
+                             max-width:400px;text-align:center;">
+                    You're one step away from your prayer-centered dashboard.
+                    Confirm your email to unlock onboarding.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:240px;" arcsize="50%"
+                    fillcolor="#B8904A" strokecolor="#B8904A">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">
+                      Confirm email address
+                    </center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a class="email-btn" href="{{ .ConfirmationURL }}"
+                    style="display:inline-block;background-color:#B8904A;color:#ffffff;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                           font-size:16px;font-weight:600;letter-spacing:-0.01em;text-decoration:none;
+                           border-radius:100px;padding:16px 40px;-webkit-text-size-adjust:none;
+                           mso-hide:all;">
+                    Confirm email address
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;color:rgba(235,228,212,0.32);line-height:1.6;">
+                    If the button doesn't work, copy this link into your browser:
+                  </p>
+                  <p style="margin:0;font-family:monospace;font-size:11px;word-break:break-all;
+                             color:rgba(212,165,116,0.55);">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:24px;">
+              <tr>
+                <td style="height:1px;background:rgba(255,255,255,0.07);font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Security notice -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;line-height:1.75;color:rgba(235,228,212,0.32);
+                             max-width:380px;text-align:center;">
+                    This link expires in 24&nbsp;hours. If you didn't create a Noor account,
+                    ignore this email — no account will be activated.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- ─── Footer ─── -->
+        <tr>
+          <td align="center" style="padding-top:28px;padding-bottom:8px;">
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:12px;color:rgba(235,228,212,0.22);letter-spacing:0.04em;">
+              Noor &nbsp;·&nbsp; Prayer-centered operating system
+            </p>
+            <p style="margin:6px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:11px;color:rgba(235,228,212,0.14);">
+              Private by default &nbsp;·&nbsp; Your data is yours
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+
+<!-- ============================================================ -->
+<!-- END TEMPLATE 1 — Cut everything above for Confirm Signup    -->
+<!-- ============================================================ -->
+
+
+
+
+<!-- ============================================================ -->
+<!-- 2. RESET PASSWORD                                            -->
+<!-- Subject: Reset your Noor password                           -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Reset your Noor password</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 620px) {
+      .email-body { padding: 24px 16px !important; }
+      .email-card { border-radius: 16px !important; padding: 32px 24px !important; }
+      .email-heading { font-size: 24px !important; line-height: 1.2 !important; }
+      .email-btn { padding: 14px 28px !important; font-size: 15px !important; }
+      .email-logo-text { font-size: 24px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#06100A;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="background-color:#06100A;min-height:100%;width:100%;">
+  <tr>
+    <td class="email-body" align="center" valign="top" style="padding:48px 24px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+        style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://www.letnoorin.com/logo-white.png" alt="" width="38" height="38" border="0"
+                    style="border-radius:50%;display:block;width:38px;height:38px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span class="email-logo-text"
+                    style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;
+                           letter-spacing:-0.03em;color:rgba(247,243,236,0.95);white-space:nowrap;">Noor</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Card -->
+        <tr>
+          <td class="email-card"
+            style="background-color:#0C1812;border:1px solid rgba(255,255,255,0.1);
+                   border-radius:24px;padding:48px 40px;">
+
+            <!-- Eyebrow pill — sage tone for security action -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="display:inline-block;background-color:rgba(122,148,129,0.14);
+                                border:1px solid rgba(122,148,129,0.28);border-radius:100px;
+                                padding:5px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:10px;font-weight:700;letter-spacing:0.22em;
+                                text-transform:uppercase;color:rgb(172,212,182);">
+                    Private Access
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:28px;">
+              <tr>
+                <td style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(122,148,129,0.3) 50%,transparent 100%);
+                           font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Heading -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:14px;">
+                  <h1 class="email-heading"
+                    style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;
+                           font-weight:600;line-height:1.15;letter-spacing:-0.03em;
+                           color:rgba(247,243,236,0.95);">
+                    Reset your password
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:36px;">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:15px;line-height:1.75;color:rgba(235,228,212,0.58);
+                             max-width:400px;text-align:center;">
+                    We received a request to reset the password for your Noor account.
+                    Click below to choose a new one.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="50%"
+                    fillcolor="#B8904A" strokecolor="#B8904A">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Reset password</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a class="email-btn" href="{{ .ConfirmationURL }}"
+                    style="display:inline-block;background-color:#B8904A;color:#ffffff;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                           font-size:16px;font-weight:600;letter-spacing:-0.01em;text-decoration:none;
+                           border-radius:100px;padding:16px 40px;-webkit-text-size-adjust:none;mso-hide:all;">
+                    Reset password
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;color:rgba(235,228,212,0.32);line-height:1.6;">
+                    If the button doesn't work, copy this link into your browser:
+                  </p>
+                  <p style="margin:0;font-family:monospace;font-size:11px;word-break:break-all;
+                             color:rgba(212,165,116,0.55);">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:24px;">
+              <tr>
+                <td style="height:1px;background:rgba(255,255,255,0.07);font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Security notice -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;line-height:1.75;color:rgba(235,228,212,0.32);
+                             max-width:380px;text-align:center;">
+                    This link expires in 1&nbsp;hour. If you didn't request a password reset,
+                    ignore this email — your account remains secure and unchanged.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding-top:28px;padding-bottom:8px;">
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:12px;color:rgba(235,228,212,0.22);letter-spacing:0.04em;">
+              Noor &nbsp;·&nbsp; Prayer-centered operating system
+            </p>
+            <p style="margin:6px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:11px;color:rgba(235,228,212,0.14);">
+              Private by default &nbsp;·&nbsp; Your data is yours
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+
+<!-- ============================================================ -->
+<!-- END TEMPLATE 2 — Cut everything above for Reset Password    -->
+<!-- ============================================================ -->
+
+
+
+
+<!-- ============================================================ -->
+<!-- 3. MAGIC LINK                                                -->
+<!-- Subject: Your Noor sign-in link                             -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Your Noor sign-in link</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 620px) {
+      .email-body { padding: 24px 16px !important; }
+      .email-card { border-radius: 16px !important; padding: 32px 24px !important; }
+      .email-heading { font-size: 24px !important; }
+      .email-btn { padding: 14px 28px !important; font-size: 15px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#06100A;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="background-color:#06100A;min-height:100%;width:100%;">
+  <tr>
+    <td class="email-body" align="center" valign="top" style="padding:48px 24px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+        style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://www.letnoorin.com/logo-white.png" alt="Noor" width="38" height="38"
+                    style="border-radius:50%;display:block;width:38px;height:38px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;
+                               letter-spacing:-0.03em;color:rgba(247,243,236,0.95);">Noor</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Card -->
+        <tr>
+          <td class="email-card"
+            style="background-color:#0C1812;border:1px solid rgba(255,255,255,0.1);
+                   border-radius:24px;padding:48px 40px;">
+
+            <!-- Eyebrow pill -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="display:inline-block;background-color:rgba(184,144,74,0.14);
+                                border:1px solid rgba(184,144,74,0.3);border-radius:100px;
+                                padding:5px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:10px;font-weight:700;letter-spacing:0.22em;
+                                text-transform:uppercase;color:rgb(212,165,116);">
+                    Sign-In Link
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:28px;">
+              <tr>
+                <td style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(184,144,74,0.35) 50%,transparent 100%);
+                           font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Heading -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:14px;">
+                  <h1 class="email-heading"
+                    style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;
+                           font-weight:600;line-height:1.15;letter-spacing:-0.03em;
+                           color:rgba(247,243,236,0.95);">
+                    Your sign-in link
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:36px;">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:15px;line-height:1.75;color:rgba(235,228,212,0.58);
+                             max-width:400px;text-align:center;">
+                    Click the button below to sign in to your Noor account.
+                    This link is single-use and expires in 1&nbsp;hour.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:200px;" arcsize="50%"
+                    fillcolor="#B8904A" strokecolor="#B8904A">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Sign in to Noor</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a class="email-btn" href="{{ .ConfirmationURL }}"
+                    style="display:inline-block;background-color:#B8904A;color:#ffffff;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                           font-size:16px;font-weight:600;letter-spacing:-0.01em;text-decoration:none;
+                           border-radius:100px;padding:16px 40px;-webkit-text-size-adjust:none;mso-hide:all;">
+                    Sign in to Noor
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;color:rgba(235,228,212,0.32);line-height:1.6;">
+                    If the button doesn't work, copy this link into your browser:
+                  </p>
+                  <p style="margin:0;font-family:monospace;font-size:11px;word-break:break-all;
+                             color:rgba(212,165,116,0.55);">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:24px;">
+              <tr>
+                <td style="height:1px;background:rgba(255,255,255,0.07);font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Security notice -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;line-height:1.75;color:rgba(235,228,212,0.32);
+                             max-width:380px;text-align:center;">
+                    If you didn't request this sign-in link, ignore this email.
+                    Your account remains private and untouched.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding-top:28px;padding-bottom:8px;">
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:12px;color:rgba(235,228,212,0.22);letter-spacing:0.04em;">
+              Noor &nbsp;·&nbsp; Prayer-centered operating system
+            </p>
+            <p style="margin:6px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:11px;color:rgba(235,228,212,0.14);">
+              Private by default &nbsp;·&nbsp; Your data is yours
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+
+<!-- ============================================================ -->
+<!-- END TEMPLATE 3 — Cut everything above for Magic Link        -->
+<!-- ============================================================ -->
+
+
+
+
+<!-- ============================================================ -->
+<!-- 4. CHANGE EMAIL ADDRESS                                      -->
+<!-- Subject: Confirm your new Noor email address                -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Confirm your new email address</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 620px) {
+      .email-body { padding: 24px 16px !important; }
+      .email-card { border-radius: 16px !important; padding: 32px 24px !important; }
+      .email-heading { font-size: 24px !important; }
+      .email-btn { padding: 14px 28px !important; font-size: 15px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#06100A;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="background-color:#06100A;min-height:100%;width:100%;">
+  <tr>
+    <td class="email-body" align="center" valign="top" style="padding:48px 24px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+        style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://www.letnoorin.com/logo-white.png" alt="Noor" width="38" height="38"
+                    style="border-radius:50%;display:block;width:38px;height:38px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;
+                               letter-spacing:-0.03em;color:rgba(247,243,236,0.95);">Noor</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Card -->
+        <tr>
+          <td class="email-card"
+            style="background-color:#0C1812;border:1px solid rgba(255,255,255,0.1);
+                   border-radius:24px;padding:48px 40px;">
+
+            <!-- Eyebrow pill -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="display:inline-block;background-color:rgba(122,148,129,0.14);
+                                border:1px solid rgba(122,148,129,0.28);border-radius:100px;
+                                padding:5px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:10px;font-weight:700;letter-spacing:0.22em;
+                                text-transform:uppercase;color:rgb(172,212,182);">
+                    Account Update
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:28px;">
+              <tr>
+                <td style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(122,148,129,0.3) 50%,transparent 100%);
+                           font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Heading -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:14px;">
+                  <h1 class="email-heading"
+                    style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;
+                           font-weight:600;line-height:1.15;letter-spacing:-0.03em;
+                           color:rgba(247,243,236,0.95);">
+                    Confirm your new email
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:36px;">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:15px;line-height:1.75;color:rgba(235,228,212,0.58);
+                             max-width:400px;text-align:center;">
+                    You requested to change the email address on your Noor account
+                    to <strong style="color:rgba(212,165,116,0.8);font-weight:600;">{{ .Email }}</strong>.
+                    Confirm below to complete the update.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="50%"
+                    fillcolor="#B8904A" strokecolor="#B8904A">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Confirm new email</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a class="email-btn" href="{{ .ConfirmationURL }}"
+                    style="display:inline-block;background-color:#B8904A;color:#ffffff;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                           font-size:16px;font-weight:600;letter-spacing:-0.01em;text-decoration:none;
+                           border-radius:100px;padding:16px 40px;-webkit-text-size-adjust:none;mso-hide:all;">
+                    Confirm new email
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;color:rgba(235,228,212,0.32);line-height:1.6;">
+                    If the button doesn't work, copy this link into your browser:
+                  </p>
+                  <p style="margin:0;font-family:monospace;font-size:11px;word-break:break-all;
+                             color:rgba(212,165,116,0.55);">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:24px;">
+              <tr>
+                <td style="height:1px;background:rgba(255,255,255,0.07);font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Security notice -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;line-height:1.75;color:rgba(235,228,212,0.32);
+                             max-width:380px;text-align:center;">
+                    This link expires in 24&nbsp;hours. If you didn't request this change,
+                    your current email address remains active — contact support immediately.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding-top:28px;padding-bottom:8px;">
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:12px;color:rgba(235,228,212,0.22);letter-spacing:0.04em;">
+              Noor &nbsp;·&nbsp; Prayer-centered operating system
+            </p>
+            <p style="margin:6px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:11px;color:rgba(235,228,212,0.14);">
+              Private by default &nbsp;·&nbsp; Your data is yours
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+
+<!-- ============================================================ -->
+<!-- END TEMPLATE 4 — Cut everything above for Change Email      -->
+<!-- ============================================================ -->
+
+
+
+
+<!-- ============================================================ -->
+<!-- 5. INVITE USER                                               -->
+<!-- Subject: You've been invited to Noor                        -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>You've been invited to Noor</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 620px) {
+      .email-body { padding: 24px 16px !important; }
+      .email-card { border-radius: 16px !important; padding: 32px 24px !important; }
+      .email-heading { font-size: 24px !important; }
+      .email-btn { padding: 14px 28px !important; font-size: 15px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#06100A;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="background-color:#06100A;min-height:100%;width:100%;">
+  <tr>
+    <td class="email-body" align="center" valign="top" style="padding:48px 24px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+        style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://www.letnoorin.com/logo-white.png" alt="Noor" width="38" height="38"
+                    style="border-radius:50%;display:block;width:38px;height:38px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;
+                               letter-spacing:-0.03em;color:rgba(247,243,236,0.95);">Noor</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Card -->
+        <tr>
+          <td class="email-card"
+            style="background-color:#0C1812;border:1px solid rgba(255,255,255,0.1);
+                   border-radius:24px;padding:48px 40px;">
+
+            <!-- Eyebrow pill -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="display:inline-block;background-color:rgba(184,144,74,0.14);
+                                border:1px solid rgba(184,144,74,0.3);border-radius:100px;
+                                padding:5px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:10px;font-weight:700;letter-spacing:0.22em;
+                                text-transform:uppercase;color:rgb(212,165,116);">
+                    Invitation
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:28px;">
+              <tr>
+                <td style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(184,144,74,0.35) 50%,transparent 100%);
+                           font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Heading -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:14px;">
+                  <h1 class="email-heading"
+                    style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;
+                           font-weight:600;line-height:1.15;letter-spacing:-0.03em;
+                           color:rgba(247,243,236,0.95);">
+                    You've been invited to Noor
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:36px;">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:15px;line-height:1.75;color:rgba(235,228,212,0.58);
+                             max-width:420px;text-align:center;">
+                    Noor is a private, prayer-centered operating system for managing faith,
+                    tasks, fitness, and family — anchored around your five daily prayers.
+                    Accept the invitation to create your account.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Feature pills row -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:0 4px;">
+                        <span style="display:inline-block;background-color:rgba(122,148,129,0.14);
+                                      border:1px solid rgba(122,148,129,0.22);border-radius:100px;
+                                      padding:5px 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                      font-size:11px;font-weight:500;color:rgb(172,212,182);">
+                          5 daily prayers
+                        </span>
+                      </td>
+                      <td style="padding:0 4px;">
+                        <span style="display:inline-block;background-color:rgba(107,138,168,0.14);
+                                      border:1px solid rgba(107,138,168,0.22);border-radius:100px;
+                                      padding:5px 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                      font-size:11px;font-weight:500;color:rgb(162,196,224);">
+                          4 life pillars
+                        </span>
+                      </td>
+                      <td style="padding:0 4px;">
+                        <span style="display:inline-block;background-color:rgba(184,144,74,0.12);
+                                      border:1px solid rgba(184,144,74,0.22);border-radius:100px;
+                                      padding:5px 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                      font-size:11px;font-weight:500;color:rgb(212,165,116);">
+                          Private by default
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="50%"
+                    fillcolor="#B8904A" strokecolor="#B8904A">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Accept invitation</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a class="email-btn" href="{{ .ConfirmationURL }}"
+                    style="display:inline-block;background-color:#B8904A;color:#ffffff;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                           font-size:16px;font-weight:600;letter-spacing:-0.01em;text-decoration:none;
+                           border-radius:100px;padding:16px 40px;-webkit-text-size-adjust:none;mso-hide:all;">
+                    Accept invitation
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;color:rgba(235,228,212,0.32);line-height:1.6;">
+                    If the button doesn't work, copy this link into your browser:
+                  </p>
+                  <p style="margin:0;font-family:monospace;font-size:11px;word-break:break-all;
+                             color:rgba(212,165,116,0.55);">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+              style="margin-bottom:24px;">
+              <tr>
+                <td style="height:1px;background:rgba(255,255,255,0.07);font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <!-- Security notice -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:12px;line-height:1.75;color:rgba(235,228,212,0.32);
+                             max-width:380px;text-align:center;">
+                    This invitation link expires in 7&nbsp;days. If you weren't expecting
+                    this, ignore the email — no account will be created.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding-top:28px;padding-bottom:8px;">
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:12px;color:rgba(235,228,212,0.22);letter-spacing:0.04em;">
+              Noor &nbsp;·&nbsp; Prayer-centered operating system
+            </p>
+            <p style="margin:6px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                       font-size:11px;color:rgba(235,228,212,0.14);">
+              Private by default &nbsp;·&nbsp; Your data is yours
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+
+<!-- ============================================================ -->
+<!-- END TEMPLATE 5 — Cut everything above for Invite User       -->
+<!-- ============================================================ -->

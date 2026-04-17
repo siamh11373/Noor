@@ -34,9 +34,9 @@ const SPLIT_COLORS: Record<string, string> = {
   Back:      'text-tasks-text bg-tasks-light border-tasks-border',
   Arms:      'text-family-text bg-family-light border-family-border',
   Legs:      'text-faith-text bg-faith-light border-faith-border',
-  Shoulders: 'text-amber-700 bg-amber-50 border-amber-200',
-  'Full Body':'text-brand-600 bg-brand-50 border-brand-200',
-  Cardio:    'text-pink-700 bg-pink-50 border-pink-200',
+  Shoulders:   'text-brand-600 bg-brand-100 border-brand-200',
+  'Full Body': 'text-brand-500 bg-brand-50 border-brand-200',
+  Cardio:      'text-fitness-text bg-fitness-light border-fitness-border',
   Rest:      'text-ink-ghost bg-surface-muted border-surface-border',
 }
 
