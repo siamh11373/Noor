@@ -369,7 +369,7 @@ interface SalahStore extends SalahDataState {
   upsertPersonalRecord: (record: PersonalRecord) => void
   updateWeeklySplit: (split: WeeklySplit) => void
 
-  addCalendarTask: (task: Omit<CalendarTask, 'id'>) => void
+  addCalendarTask: (task: Omit<CalendarTask, 'id'>) => string
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   deleteCalendarTask: (id: string) => void
   toggleCalendarTask: (id: string) => void
@@ -873,9 +873,11 @@ export const useSalahStore = create<SalahStore>()((set, get) => ({
   },
 
   addCalendarTask(task) {
+    const id = crypto.randomUUID()
     set(s => ({
-      calendarTasks: [...s.calendarTasks, { ...task, id: crypto.randomUUID() }],
+      calendarTasks: [...s.calendarTasks, { ...task, id }],
     }))
+    return id
   },
 
   updateCalendarTask(id, patch) {

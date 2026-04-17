@@ -1,7 +1,22 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { DayCalendarView } from '@/components/tasks/DayCalendarView'
+import { TaskDayPanel } from '@/components/tasks/TaskDayPanel'
+import { TaskScheduleDayList } from '@/components/tasks/TaskScheduleDayList'
+import { TaskScheduleWeekBoard } from '@/components/tasks/TaskScheduleWeekBoard'
+import { WeekCalendarView } from '@/components/tasks/WeekCalendarView'
 import { toDateKey } from '@/lib/date'
+import { nextStartForAppend } from '@/lib/task-schedule-order'
+import {
+  DAY_END_MINUTES,
+  DAY_START_MINUTES,
+  DEFAULT_NEW_TASK_MINUTES,
+  minutesToTime,
+  snapMinutesFloor,
+  TASK_PILLAR_STYLES,
+  timeToMinutes,
+} from '@/lib/tasks-calendar'
 import { useSalahStore } from '@/lib/store'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
 import { computePrayerTimesForDates } from '@/lib/prayers'
@@ -13,43 +28,12 @@ import type { CalendarTask, PillarKey, PrayerTime } from '@/types'
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 type ViewMode = 'day' | 'week' | 'month'
+type ScheduleMode = 'time' | 'task'
 
-const HOUR_HEIGHT = 60
-const START_HOUR = 4
-const END_HOUR = 24
-const TOTAL_HOURS = END_HOUR - START_HOUR
-
-const PILLAR_COLORS: Record<PillarKey, { bg: string; border: string; text: string }> = {
-  faith:   { bg: 'bg-faith-light', border: 'border-faith-border', text: 'text-faith-text' },
-  career:  { bg: 'bg-tasks-light', border: 'border-tasks-border', text: 'text-tasks-text' },
-  fitness: { bg: 'bg-fitness-light', border: 'border-fitness-border', text: 'text-fitness-text' },
-  family:  { bg: 'bg-family-light', border: 'border-family-border', text: 'text-family-text' },
-}
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number)
-  return h * 60 + m
-}
-
-function minutesToTime(mins: number): string {
-  const h = Math.floor(mins / 60) % 24
-  const m = mins % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
-
-function formatHour(hour: number): string {
-  if (hour === 0 || hour === 24) return '12 AM'
-  if (hour === 12) return '12 PM'
-  return hour < 12 ? `${hour} AM` : `${hour - 12} PM`
-}
-
-function formatTimeDisplay(time: string): string {
-  const mins = timeToMinutes(time)
-  const h = Math.floor(mins / 60) % 24
-  const m = mins % 60
-  const meridiem = h >= 12 ? 'PM' : 'AM'
-  const display = h === 0 ? 12 : h > 12 ? h - 12 : h
-  return `${display}:${String(m).padStart(2, '0')} ${meridiem}`
+const VIEW_LABEL: Record<ViewMode, string> = {
+  day: 'Day',
+  week: 'Week',
+  month: 'Month',
 }
 
 function getWeekDates(date: Date): Date[] {
@@ -68,9 +52,19 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
-function prayerToMinutes(pt: PrayerTime): number | null {
-  if (!pt.time) return null
-  return pt.time.getHours() * 60 + pt.time.getMinutes()
+/** Target calendar day for quick-add in Task mode (week prefers today-in-week). */
+function taskQuickAddDateKey(view: ViewMode, selectedDate: Date): string {
+  const now = new Date()
+  if (view === 'day') return toDateKey(selectedDate)
+  if (view === 'week') {
+    const week = getWeekDates(selectedDate)
+    const todayInWeek = week.find((d) => isSameDay(d, now)) ?? week[0]!
+    return toDateKey(todayInWeek)
+  }
+  const sameMonth =
+    now.getFullYear() === selectedDate.getFullYear() && now.getMonth() === selectedDate.getMonth()
+  if (sameMonth) return toDateKey(now)
+  return toDateKey(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -179,293 +173,6 @@ function TaskPopover({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   DAY VIEW
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-function DayView({
-  date,
-  tasks,
-  prayerTimes,
-  onCreateTask,
-  onEditTask,
-  onToggleTask,
-}: {
-  date: Date
-  tasks: CalendarTask[]
-  prayerTimes: PrayerTime[]
-  onCreateTask: (date: string, time: string) => void
-  onEditTask: (task: CalendarTask) => void
-  onToggleTask: (id: string) => void
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const dateStr = toDateKey(date)
-  const dayTasks = tasks.filter((t) => t.date === dateStr)
-  const now = new Date()
-  const isToday = isSameDay(date, now)
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
-
-  useEffect(() => {
-    if (scrollRef.current && isToday) {
-      const scrollTo = Math.max(0, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
-      scrollRef.current.scrollTop = scrollTo
-    }
-  }, [isToday, currentMinutes])
-
-  function handleGridClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const y = e.clientY - rect.top + (scrollRef.current?.scrollTop ?? 0)
-    const minuteOffset = (y / HOUR_HEIGHT) * 60 + START_HOUR * 60
-    const snapped = Math.floor(minuteOffset / 15) * 15
-    onCreateTask(dateStr, minutesToTime(snapped))
-  }
-
-  return (
-    <div ref={scrollRef} className="overflow-y-auto" style={{ height: 'calc(100vh - 180px)' }}>
-      <div className="relative" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
-        {/* Hour lines */}
-        {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute inset-x-0 flex items-start"
-            style={{ top: i * HOUR_HEIGHT }}
-          >
-            <span className="w-16 shrink-0 pr-3 text-right text-[11px] text-ink-ghost -translate-y-[7px]">
-              {formatHour(START_HOUR + i)}
-            </span>
-            <div className="flex-1 border-t border-surface-border" />
-          </div>
-        ))}
-
-        {/* Prayer landmarks */}
-        {prayerTimes.map((pt) => {
-          const mins = prayerToMinutes(pt)
-          if (mins === null) return null
-          const top = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT
-          if (top < 0 || top > TOTAL_HOURS * HOUR_HEIGHT) return null
-          return (
-            <div
-              key={pt.name}
-              className="absolute inset-x-0 z-10 flex items-center pl-16"
-              style={{ top }}
-            >
-              <div className="flex-1 flex items-center gap-2 rounded-md bg-faith-light/80 border border-faith-border/40 px-3 py-1">
-                <span className="text-[10px] font-semibold text-faith-text">{pt.displayName}</span>
-                <span className="text-[10px] text-faith-text/60">{pt.formattedTime}</span>
-              </div>
-            </div>
-          )
-        })}
-
-        {/* Current time indicator */}
-        {isToday && (
-          <div
-            className="absolute inset-x-0 z-20 flex items-center pl-14"
-            style={{ top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT }}
-          >
-            <div className="h-2.5 w-2.5 rounded-full bg-red-500 -ml-1" />
-            <div className="flex-1 border-t-2 border-red-500" />
-          </div>
-        )}
-
-        {/* Clickable area */}
-        <div
-          className="absolute inset-0 left-16 cursor-pointer"
-          onClick={handleGridClick}
-        />
-
-        {/* Task blocks */}
-        {dayTasks.map((task) => {
-          const startMins = timeToMinutes(task.startTime)
-          const top = ((startMins - START_HOUR * 60) / 60) * HOUR_HEIGHT
-          const height = (task.duration / 60) * HOUR_HEIGHT
-          const colors = PILLAR_COLORS[task.pillar]
-
-          return (
-            <div
-              key={task.id}
-              className={cn(
-                'absolute left-[72px] right-2 z-30 rounded-lg border px-3 py-1.5 cursor-pointer transition-shadow hover:shadow-card-hover',
-                colors.bg, colors.border,
-                task.completed && 'opacity-50',
-              )}
-              style={{ top: Math.max(top, 0), height: Math.max(height, 24) }}
-              onClick={(e) => { e.stopPropagation(); onEditTask(task) }}
-            >
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleTask(task.id) }}
-                  className={cn(
-                    'w-4 h-4 rounded border-[1.5px] shrink-0 flex items-center justify-center',
-                    task.completed ? 'bg-faith border-faith' : 'border-current opacity-40',
-                  )}
-                >
-                  {task.completed && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                      <path d="M1.5 4l1.5 1.5 3-3" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-                <span className={cn('text-[12px] font-medium truncate', colors.text, task.completed && 'line-through')}>
-                  {task.title}
-                </span>
-              </div>
-              {height > 32 && (
-                <p className="text-[10px] opacity-60 mt-0.5 pl-6">
-                  {formatTimeDisplay(task.startTime)} · {task.duration}m
-                </p>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   WEEK VIEW
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-function WeekView({
-  date,
-  tasks,
-  prayerTimesByDate,
-  onSelectDay,
-  onToggleTask,
-}: {
-  date: Date
-  tasks: CalendarTask[]
-  prayerTimesByDate: Record<string, PrayerTime[]>
-  onSelectDay: (d: Date) => void
-  onToggleTask: (id: string) => void
-}) {
-  const weekDates = getWeekDates(date)
-  const today = new Date()
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const now = new Date()
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollTo = Math.max(0, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
-      scrollRef.current.scrollTop = scrollTo
-    }
-  }, [currentMinutes])
-
-  return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
-      {/* Day headers */}
-      <div className="flex border-b border-surface-border">
-        <div className="w-14 shrink-0" />
-        {weekDates.map((d, i) => {
-          const isToday = isSameDay(d, today)
-          return (
-            <div
-              key={i}
-              className="flex-1 text-center py-2 cursor-pointer hover:bg-surface-muted transition-colors"
-              onClick={() => onSelectDay(d)}
-            >
-              <p className={cn('text-[10px] uppercase', isToday ? 'text-brand-400 font-semibold' : 'text-ink-ghost')}>
-                {dayNames[i]}
-              </p>
-              <p className={cn(
-                'text-[18px] font-semibold mt-0.5',
-                isToday ? 'text-brand-400' : 'text-ink-primary',
-              )}>
-                {d.getDate()}
-              </p>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Grid */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="relative flex" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
-          {/* Time gutter */}
-          <div className="w-14 shrink-0 relative">
-            {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-              <div key={i} className="absolute right-0 left-0 text-right pr-2" style={{ top: i * HOUR_HEIGHT }}>
-                <span className="text-[10px] text-ink-ghost -translate-y-[6px] inline-block">
-                  {formatHour(START_HOUR + i)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Day columns */}
-          {weekDates.map((d, colIdx) => {
-            const dateStr = toDateKey(d)
-            const colTasks = tasks.filter((t) => t.date === dateStr)
-            const isToday = isSameDay(d, today)
-
-            return (
-              <div key={colIdx} className={cn('flex-1 relative border-l border-surface-border', isToday && 'bg-brand-50/30')}>
-                {/* Hour lines */}
-                {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                  <div key={i} className="absolute inset-x-0 border-t border-surface-border" style={{ top: i * HOUR_HEIGHT }} />
-                ))}
-
-                {/* Prayer bars (per-day) */}
-                {(prayerTimesByDate[dateStr] ?? []).map((pt) => {
-                  const mins = prayerToMinutes(pt)
-                  if (mins === null) return null
-                  const top = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT
-                  if (top < 0 || top > TOTAL_HOURS * HOUR_HEIGHT) return null
-                  return (
-                    <div
-                      key={pt.name}
-                      className="absolute inset-x-0.5 z-10 flex items-center gap-1 rounded bg-faith-light/80 border border-faith-border/40 px-1.5 py-0.5"
-                      style={{ top }}
-                    >
-                      <span className="text-[8px] font-semibold text-faith-text truncate">{pt.displayName}</span>
-                      <span className="text-[7px] text-faith-text/50">{pt.formattedTime}</span>
-                    </div>
-                  )
-                })}
-
-                {/* Current time line */}
-                {isToday && (
-                  <div
-                    className="absolute inset-x-0 z-20 border-t-2 border-red-500"
-                    style={{ top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT }}
-                  />
-                )}
-
-                {/* Tasks */}
-                {colTasks.map((task) => {
-                  const startMins = timeToMinutes(task.startTime)
-                  const top = ((startMins - START_HOUR * 60) / 60) * HOUR_HEIGHT
-                  const height = (task.duration / 60) * HOUR_HEIGHT
-                  const colors = PILLAR_COLORS[task.pillar]
-
-                  return (
-                    <div
-                      key={task.id}
-                      className={cn(
-                        'absolute inset-x-0.5 z-30 rounded-md border px-1.5 py-1 cursor-pointer text-[10px] overflow-hidden',
-                        colors.bg, colors.border, colors.text,
-                        task.completed && 'opacity-40',
-                      )}
-                      style={{ top, height: Math.max(height, 20) }}
-                      onClick={() => onToggleTask(task.id)}
-                    >
-                      <p className={cn('font-medium truncate', task.completed && 'line-through')}>{task.title}</p>
-                      {height > 28 && <p className="opacity-60">{formatTimeDisplay(task.startTime)}</p>}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
    MONTH VIEW
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -473,10 +180,15 @@ function MonthView({
   date,
   tasks,
   onSelectDay,
+  onOpenTask,
+  variant = 'time',
 }: {
   date: Date
   tasks: CalendarTask[]
   onSelectDay: (d: Date) => void
+  /** Task mode: open detail panel without leaving month (same as grid task tap). */
+  onOpenTask?: (taskId: string) => void
+  variant?: 'time' | 'task'
 }) {
   const today = new Date()
   const year = date.getFullYear()
@@ -488,67 +200,102 @@ function MonthView({
   while (cells.length % 7 !== 0) cells.push(null)
 
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const previewCap = variant === 'task' ? 2 : 3
 
   return (
     <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
-      {/* Header */}
       <div className="grid grid-cols-7 border-b border-surface-border">
         {dayLabels.map((d) => (
-          <div key={d} className="text-center py-2 text-[11px] font-semibold uppercase text-ink-ghost">
+          <div key={d} className="py-2 text-center text-[11px] font-semibold uppercase text-ink-ghost">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-7 flex-1">
+      <div className="grid flex-1 grid-cols-7">
         {cells.map((day, i) => {
           if (day === null) return <div key={i} className="border-b border-r border-surface-border bg-surface-muted/30" />
 
           const cellDate = new Date(year, month, day)
           const dateStr = toDateKey(cellDate)
           const isToday = isSameDay(cellDate, today)
-          const dayTasks = tasks.filter((t) => t.date === dateStr)
+          const dayTasks = tasks
+            .filter((t) => t.date === dateStr)
+            .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
           const completed = dayTasks.filter((t) => t.completed).length
 
           return (
             <div
               key={i}
               className={cn(
-                'border-b border-r border-surface-border p-1.5 cursor-pointer hover:bg-surface-muted/50 transition-colors min-h-[80px]',
+                'min-h-[80px] cursor-pointer border-b border-r border-surface-border p-1.5 transition-colors hover:bg-surface-muted/50',
                 isToday && 'bg-brand-50/40',
               )}
               onClick={() => onSelectDay(cellDate)}
             >
-              <div className="flex items-center justify-between">
-                <span className={cn(
-                  'text-[13px] font-medium',
-                  isToday ? 'flex h-7 w-7 items-center justify-center rounded-full bg-brand-400 text-white' : 'text-ink-primary',
-                )}>
+              <div className="flex items-center justify-between gap-1">
+                <span
+                  className={cn(
+                    'text-[13px] font-medium',
+                    isToday ? 'flex h-7 w-7 items-center justify-center rounded-full bg-brand-400 text-white' : 'text-ink-primary',
+                  )}
+                >
                   {day}
                 </span>
-                {dayTasks.length > 0 && (
-                  <span className="text-[10px] text-ink-ghost">{completed}/{dayTasks.length}</span>
-                )}
+                {variant === 'task' ? (
+                  dayTasks.length > 0 ? (
+                    <span className="shrink-0 text-[10px] font-medium text-ink-muted">{dayTasks.length}</span>
+                  ) : null
+                ) : dayTasks.length > 0 ? (
+                  <span className="text-[10px] text-ink-ghost">
+                    {completed}/{dayTasks.length}
+                  </span>
+                ) : null}
               </div>
               <div className="mt-1 space-y-0.5">
-                {dayTasks.slice(0, 3).map((t) => {
-                  const colors = PILLAR_COLORS[t.pillar]
+                {dayTasks.slice(0, previewCap).map((t) => {
+                  const colors = TASK_PILLAR_STYLES[t.pillar]
+                  const preview = (
+                    <span className={cn('truncate', t.completed && 'line-through opacity-40')}>{t.title}</span>
+                  )
+                  if (variant === 'task' && onOpenTask) {
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onOpenTask(t.id)
+                        }}
+                        className={cn(
+                          'block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] transition-opacity hover:opacity-90',
+                          colors.bg,
+                          colors.text,
+                        )}
+                      >
+                        {preview}
+                      </button>
+                    )
+                  }
                   return (
                     <div
                       key={t.id}
                       className={cn(
-                        'rounded px-1.5 py-0.5 text-[10px] truncate',
-                        colors.bg, colors.text,
-                        t.completed && 'opacity-40 line-through',
+                        'truncate rounded px-1.5 py-0.5 text-[10px]',
+                        colors.bg,
+                        colors.text,
+                        t.completed && 'line-through opacity-40',
                       )}
                     >
                       {t.title}
                     </div>
                   )
                 })}
-                {dayTasks.length > 3 && (
-                  <p className="text-[9px] text-ink-ghost pl-1.5">+{dayTasks.length - 3} more</p>
+                {variant === 'task' && dayTasks.length > previewCap && (
+                  <p className="pl-1.5 text-[9px] text-ink-ghost">+{dayTasks.length - previewCap} more</p>
+                )}
+                {variant === 'time' && dayTasks.length > previewCap && (
+                  <p className="pl-1.5 text-[9px] text-ink-ghost">+{dayTasks.length - previewCap} more</p>
                 )}
               </div>
             </div>
@@ -565,7 +312,7 @@ function MonthView({
 
 export default function TasksPage() {
   const { prayerTimes } = usePrayerTimes()
-  const settings = useSalahStore(s => s.settings)
+  const settings = useSalahStore((s) => s.settings)
   const {
     calendarTasks,
     addCalendarTask,
@@ -574,23 +321,49 @@ export default function TasksPage() {
     toggleCalendarTask,
   } = useSalahStore()
 
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('time')
   const [view, setView] = useState<ViewMode>('week')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [weekPrayerTimes, setWeekPrayerTimes] = useState<Record<string, PrayerTime[]>>({})
 
-  const computeWeekPrayers = useCallback(async (centerDate: Date) => {
-    const lat = settings.location.lat
-    const lng = settings.location.lng
-    if (lat == null || lng == null) return
+  const computeWeekPrayers = useCallback(
+    async (centerDate: Date) => {
+      const lat = settings.location.lat
+      const lng = settings.location.lng
+      if (lat == null || lng == null) return
 
-    const dates = getWeekDates(centerDate)
-    const result = await computePrayerTimesForDates(lat, lng, settings.madhab, settings.calcMethod, dates)
-    setWeekPrayerTimes(result)
-  }, [settings.location.lat, settings.location.lng, settings.madhab, settings.calcMethod])
+      const dates = getWeekDates(centerDate)
+      const result = await computePrayerTimesForDates(lat, lng, settings.madhab, settings.calcMethod, dates)
+      setWeekPrayerTimes(result)
+    },
+    [settings.location.lat, settings.location.lng, settings.madhab, settings.calcMethod],
+  )
 
   useEffect(() => {
     computeWeekPrayers(selectedDate)
   }, [computeWeekPrayers, selectedDate])
+
+  const [dayPanelTaskId, setDayPanelTaskId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (view !== 'day' && view !== 'week') {
+      setDayPanelTaskId(null)
+      return
+    }
+    setDayPanelTaskId(null)
+  }, [view, selectedDate, scheduleMode])
+
+  useEffect(() => {
+    if (view === 'day' || view === 'week' || scheduleMode !== 'time') setPopover(null)
+  }, [view, scheduleMode])
+
+  useEffect(() => {
+    if (!dayPanelTaskId) return
+    if (!calendarTasks.some((t) => t.id === dayPanelTaskId)) {
+      setDayPanelTaskId(null)
+    }
+  }, [calendarTasks, dayPanelTaskId])
+
   const [popover, setPopover] = useState<{
     type: 'create' | 'edit'
     task?: CalendarTask
@@ -599,9 +372,9 @@ export default function TasksPage() {
     position: { top: number; left: number }
   } | null>(null)
 
-  const todayStr = toDateKey(new Date())
-
-  function goToday() { setSelectedDate(new Date()) }
+  function goToday() {
+    setSelectedDate(new Date())
+  }
 
   function navigate(dir: -1 | 1) {
     setSelectedDate((d) => {
@@ -618,16 +391,6 @@ export default function TasksPage() {
       type: 'create',
       date,
       time,
-      position: { top: 100, left: 100 },
-    })
-  }
-
-  function handleEditTask(task: CalendarTask) {
-    setPopover({
-      type: 'edit',
-      task,
-      date: task.date,
-      time: task.startTime,
       position: { top: 100, left: 100 },
     })
   }
@@ -649,88 +412,223 @@ export default function TasksPage() {
           })()
         : selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
+  const handleAddTask = () => {
+    if (scheduleMode === 'task') {
+      const dateKey = taskQuickAddDateKey(view, selectedDate)
+      const dayTasks = calendarTasks.filter((t) => t.date === dateKey)
+      const startTime = nextStartForAppend(dayTasks)
+      const id = addCalendarTask({
+        title: '(No title)',
+        date: dateKey,
+        startTime,
+        duration: 60,
+        pillar: 'career',
+        completed: false,
+      })
+      setDayPanelTaskId(id)
+      return
+    }
+
+    if (view === 'day' || view === 'week') {
+      const n = new Date()
+      const nowMin = n.getHours() * 60 + n.getMinutes()
+      const snapped = snapMinutesFloor(nowMin)
+      const startMins = Math.min(Math.max(snapped, DAY_START_MINUTES), DAY_END_MINUTES - DEFAULT_NEW_TASK_MINUTES)
+      let dateKey = toDateKey(selectedDate)
+      if (view === 'week') {
+        const week = getWeekDates(selectedDate)
+        const todayD = week.find((d) => isSameDay(d, n)) ?? week[0]
+        dateKey = toDateKey(todayD!)
+      }
+      const startTime = minutesToTime(startMins)
+      const id = addCalendarTask({
+        title: '(No title)',
+        date: dateKey,
+        startTime,
+        duration: DEFAULT_NEW_TASK_MINUTES,
+        pillar: 'career',
+        completed: false,
+      })
+      setDayPanelTaskId(id)
+      return
+    }
+
+    handleCreateTask(
+      toDateKey(selectedDate),
+      minutesToTime(Math.floor(new Date().getHours()) * 60 + 30),
+    )
+  }
+
   return (
     <div className="flex flex-col px-4 py-4 md:px-6">
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-[22px] font-semibold tracking-tight text-ink-primary">Tasks</h1>
           <button
             onClick={goToday}
-            className="rounded-lg border border-surface-border bg-surface-card px-3 py-1 text-[12px] font-medium text-ink-secondary hover:bg-surface-muted transition-colors"
+            className="rounded-lg border border-surface-border bg-surface-card px-3 py-1 text-[12px] font-medium text-ink-secondary transition-colors hover:bg-surface-muted"
           >
             Today
           </button>
           <div className="flex items-center gap-1">
-            <button onClick={() => navigate(-1)} className="w-7 h-7 rounded-lg border border-surface-border bg-surface-card flex items-center justify-center text-ink-muted hover:bg-surface-muted transition-colors">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3.5L5 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M8.5 3.5L5 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
-            <button onClick={() => navigate(1)} className="w-7 h-7 rounded-lg border border-surface-border bg-surface-card flex items-center justify-center text-ink-muted hover:bg-surface-muted transition-colors">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3.5L9 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <button
+              onClick={() => navigate(1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5.5 3.5L9 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
           <span className="text-[15px] font-medium text-ink-primary">{dateLabel}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-surface-border bg-surface-card p-0.5">
-            {(['day', 'week', 'month'] as ViewMode[]).map((v) => (
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div
+            className="flex shrink-0 rounded-lg border border-surface-border bg-surface-muted/40 p-0.5"
+            role="group"
+            aria-label="Schedule mode"
+          >
+            {(['time', 'task'] as const).map((m) => (
               <button
-                key={v}
-                onClick={() => setView(v)}
+                key={m}
+                type="button"
+                onClick={() => setScheduleMode(m)}
                 className={cn(
-                  'px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors capitalize',
-                  view === v ? 'bg-tasks-light text-tasks-text' : 'text-ink-muted hover:text-ink-secondary',
+                  'min-w-[5.5rem] rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors',
+                  scheduleMode === m
+                    ? 'bg-surface-card text-ink-primary shadow-sm'
+                    : 'text-ink-muted hover:text-ink-secondary',
                 )}
               >
-                {v}
+                {m === 'time' ? 'Time' : 'Task'}
               </button>
             ))}
           </div>
-          <button
-            onClick={() => handleCreateTask(toDateKey(selectedDate), minutesToTime(Math.floor(new Date().getHours()) * 60 + 30))}
-            className="btn-primary text-[12px] px-3 py-1.5"
-          >
-            + Add task
-          </button>
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-0.5 rounded-lg border border-surface-border bg-surface-card p-0.5">
+              {(['day', 'week', 'month'] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3 sm:text-[12px]',
+                    view === v ? 'bg-tasks-light text-tasks-text' : 'text-ink-muted hover:text-ink-secondary',
+                  )}
+                >
+                  {VIEW_LABEL[v]}
+                </button>
+              ))}
+            </div>
+            <button onClick={handleAddTask} className="btn-primary px-3 py-1.5 text-[12px]">
+              + Add task
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Calendar body ── */}
-      <div className="relative rounded-2xl border border-surface-border bg-surface-card overflow-hidden">
-        {view === 'day' && (
-          <DayView
+      <div className="relative overflow-hidden rounded-2xl border border-surface-border bg-surface-card">
+        {scheduleMode === 'time' && view === 'day' && (
+          <DayCalendarView
             date={selectedDate}
             tasks={calendarTasks}
             prayerTimes={weekPrayerTimes[toDateKey(selectedDate)] ?? prayerTimes}
-            onCreateTask={handleCreateTask}
-            onEditTask={handleEditTask}
-            onToggleTask={toggleCalendarTask}
+            focusedTaskId={dayPanelTaskId}
+            onFocusedTaskIdChange={setDayPanelTaskId}
+            addCalendarTask={addCalendarTask}
+            updateCalendarTask={updateCalendarTask}
+            toggleCalendarTask={toggleCalendarTask}
           />
         )}
-        {view === 'week' && (
-          <WeekView
-            date={selectedDate}
+        {scheduleMode === 'time' && view === 'week' && (
+          <WeekCalendarView
+            anchorDate={selectedDate}
             tasks={calendarTasks}
             prayerTimesByDate={weekPrayerTimes}
-            onSelectDay={handleSelectDay}
-            onToggleTask={toggleCalendarTask}
+            focusedTaskId={dayPanelTaskId}
+            onFocusedTaskIdChange={setDayPanelTaskId}
+            addCalendarTask={addCalendarTask}
+            updateCalendarTask={updateCalendarTask}
+            toggleCalendarTask={toggleCalendarTask}
+            onOpenDay={handleSelectDay}
           />
         )}
-        {view === 'month' && (
+        {scheduleMode === 'time' && view === 'month' && (
+          <MonthView date={selectedDate} tasks={calendarTasks} variant="time" onSelectDay={handleSelectDay} />
+        )}
+
+        {scheduleMode === 'task' && view === 'day' && (
+          <TaskScheduleDayList
+            date={selectedDate}
+            tasks={calendarTasks}
+            focusedTaskId={dayPanelTaskId}
+            updateCalendarTask={updateCalendarTask}
+            toggleCalendarTask={toggleCalendarTask}
+            onFocusTask={setDayPanelTaskId}
+          />
+        )}
+        {scheduleMode === 'task' && view === 'week' && (
+          <TaskScheduleWeekBoard
+            anchorDate={selectedDate}
+            tasks={calendarTasks}
+            focusedTaskId={dayPanelTaskId}
+            updateCalendarTask={updateCalendarTask}
+            toggleCalendarTask={toggleCalendarTask}
+            onFocusTask={setDayPanelTaskId}
+            onOpenDay={handleSelectDay}
+          />
+        )}
+        {scheduleMode === 'task' && view === 'month' && (
           <MonthView
             date={selectedDate}
             tasks={calendarTasks}
+            variant="task"
             onSelectDay={handleSelectDay}
+            onOpenTask={setDayPanelTaskId}
           />
         )}
       </div>
 
-      {/* ── Popover ── */}
-      {popover && (
+      {(view === 'day' || view === 'week' || (scheduleMode === 'task' && view === 'month')) &&
+        dayPanelTaskId &&
+        (() => {
+          const task = calendarTasks.find((t) => t.id === dayPanelTaskId)
+          if (!task) return null
+          const taskDay = new Date(`${task.date}T12:00:00`)
+          const weekdayDateLabel = taskDay.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })
+          return (
+            <TaskDayPanel
+              key={task.id}
+              task={task}
+              weekdayDateLabel={weekdayDateLabel}
+              onPatch={(patch) => updateCalendarTask(task.id, patch)}
+              onDelete={() => {
+                deleteCalendarTask(task.id)
+                setDayPanelTaskId(null)
+              }}
+              onClose={() => setDayPanelTaskId(null)}
+            />
+          )
+        })()}
+
+      {popover && view === 'month' && scheduleMode === 'time' && (
         <div className="fixed inset-0 z-40" onClick={() => setPopover(null)}>
           <div className="absolute inset-0" />
-          <div className="flex items-center justify-center min-h-screen p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex min-h-screen items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
             <TaskPopover
               task={popover.task}
               defaultDate={popover.date}
@@ -745,7 +643,10 @@ export default function TasksPage() {
               }}
               onDelete={
                 popover.type === 'edit' && popover.task
-                  ? () => { deleteCalendarTask(popover.task!.id); setPopover(null) }
+                  ? () => {
+                      deleteCalendarTask(popover.task!.id)
+                      setPopover(null)
+                    }
                   : undefined
               }
               onClose={() => setPopover(null)}
