@@ -132,6 +132,14 @@ export interface Database {
         Args: { invite_code: string }
         Returns: Json
       }
+      create_accountability_invite: {
+        Args: { expires_in_hours?: number }
+        Returns: Json
+      }
+      remove_accountability_connection: {
+        Args: { peer_id: string }
+        Returns: Json
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
