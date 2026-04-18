@@ -8,11 +8,9 @@ import {
   getNextPrayer,
   formatCountdown,
   minutesUntil,
+  DEFAULT_PRAYER_COORDS,
 } from '@/lib/prayers'
 import { useSalahStore } from '@/lib/store'
-
-// Warren, MI fallback — update once user sets their location
-const FALLBACK = { lat: 42.5145, lng: -83.0146 }
 
 export function usePrayerTimes() {
   const { settings, updateSettings } = useSalahStore()
@@ -37,9 +35,8 @@ export function usePrayerTimes() {
         lng = pos.coords.longitude
         updateSettings({ location: { lat, lng, city: '' } })
       } catch {
-        // Fall back to Warren, MI
-        lat = FALLBACK.lat
-        lng = FALLBACK.lng
+        lat = DEFAULT_PRAYER_COORDS.lat
+        lng = DEFAULT_PRAYER_COORDS.lng
       }
     }
 

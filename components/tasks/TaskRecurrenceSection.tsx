@@ -131,11 +131,16 @@ export function TaskRecurrenceSection({
             role="listbox"
             className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[240px] overflow-auto rounded-xl border border-surface-border bg-surface-card py-1 shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
           >
-            {MENU_PRESETS.map((opt) => (
+            {MENU_PRESETS.map((opt) => {
+              const selected =
+                (opt.key === 'off' && !hasActiveRecurrence(task)) ||
+                (opt.key !== 'off' && task.recurrence?.preset === opt.key)
+              return (
               <li key={opt.key}>
                 <button
                   type="button"
                   role="option"
+                  aria-selected={selected}
                   onClick={() => applyPreset(opt.key)}
                   className={cn(
                     'flex w-full px-3 py-2 text-left text-[12px] transition-colors hover:bg-surface-muted/80',
@@ -146,7 +151,8 @@ export function TaskRecurrenceSection({
                   {opt.label}
                 </button>
               </li>
-            ))}
+              )
+            })}
           </ul>
         )}
 

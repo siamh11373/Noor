@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { label: 'Faith',   href: '/faith',   accent: 'faith' },
   { label: 'Tasks',   href: '/tasks',   accent: 'tasks' },
   { label: 'Fitness', href: '/fitness', accent: 'fitness' },
-  { label: 'Family',  href: '/family',  accent: 'family' },
   { label: 'Circles', href: '/circles', accent: 'circles' },
 ] as const
 
@@ -23,7 +22,6 @@ const ACCENT_CLASSES: Record<string, string> = {
   faith:   'bg-faith-light text-faith-text',
   tasks:   'bg-tasks-light text-tasks-text',
   fitness: 'bg-fitness-light text-fitness-text',
-  family:  'bg-family-light text-family-text',
   circles: 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-200',
 }
 
@@ -68,7 +66,7 @@ export function TopNav() {
               <p className="text-[15px] font-semibold tracking-tight text-ink-primary">
                 Noor
               </p>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-ink-ghost">Light for your week</p>
+              <p className="text-[12px] uppercase tracking-[0.18em] text-ink-ghost">Light for your week</p>
             </div>
           </Link>
 
@@ -80,7 +78,7 @@ export function TopNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'rounded-[10px] px-3 py-1.5 text-[13px] transition-[transform,background-color,color,box-shadow] duration-200 ease-out active:scale-[0.985]',
+                    'rounded-[10px] px-3 py-1.5 text-[14px] transition-[transform,background-color,color,box-shadow] duration-200 ease-out active:scale-[0.985]',
                     active
                       ? cn('font-medium shadow-control', ACCENT_CLASSES[item.accent])
                       : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-muted hover:shadow-control',
@@ -96,7 +94,7 @@ export function TopNav() {
         {/* Right: date + avatar */}
         <div className="flex items-center gap-2.5">
           <span className={cn(
-            'hidden rounded-full border px-3 py-1 text-[11px] font-medium shadow-control transition-[box-shadow,transform] duration-200 ease-out md:inline-flex',
+            'hidden rounded-full border px-3 py-1 text-[12px] font-medium shadow-control transition-[box-shadow,transform] duration-200 ease-out md:inline-flex',
             cloudSyncStatus === 'synced'
               ? 'border-faith-border bg-faith-light text-faith-text'
               : cloudSyncStatus === 'syncing'
@@ -108,14 +106,14 @@ export function TopNav() {
             {syncLabel}
           </span>
           <ThemeToggle />
-          <span className="rounded-[10px] border border-surface-border bg-surface-card px-3 py-1 text-[12px] text-ink-faint shadow-control transition-shadow duration-200 ease-out">
+          <span className="rounded-[10px] border border-surface-border bg-surface-card px-3 py-1 text-[13px] text-ink-faint shadow-control transition-shadow duration-200 ease-out">
             {today || '\u00A0'}
           </span>
           <MenuRoot>
             <MenuTrigger asChild>
               <button
                 type="button"
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-surface-border bg-brand-100 text-[11px] font-semibold text-brand-400 shadow-control outline-none transition-[transform,box-shadow] duration-200 ease-out hover:shadow-control-hover active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-brand-300"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-surface-border bg-brand-100 text-[12px] font-semibold text-brand-400 shadow-control outline-none transition-[transform,box-shadow] duration-200 ease-out hover:shadow-control-hover active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-brand-300"
               >
                 {initial}
               </button>
@@ -123,8 +121,8 @@ export function TopNav() {
             <MenuContent align="end">
               <div className="px-3 py-2">
                 <p className="text-[13px] font-semibold text-ink-primary">{displayName}</p>
-                <p className="mt-0.5 text-[11px] text-ink-ghost">{user?.email || 'No email'}</p>
-                <p className="mt-1 text-[11px] text-brand-400">{syncLabel}</p>
+                <p className="mt-0.5 text-[12px] text-ink-ghost">{user?.email || 'No email'}</p>
+                <p className="mt-1 text-[12px] text-brand-400">{syncLabel}</p>
               </div>
               <MenuSeparator className="my-1 h-px bg-surface-border" />
               <MenuItem onSelect={() => router.push('/account')}>Account settings</MenuItem>

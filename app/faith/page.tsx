@@ -36,7 +36,13 @@ const MODULES = [
   { label: 'Faith', href: '/faith', key: 'faith' as keyof PillarScores, cls: 'bg-faith-light text-faith-text' },
   { label: 'Tasks today', href: '/tasks', key: 'career' as keyof PillarScores, cls: 'bg-tasks-light text-tasks-text' },
   { label: 'Fitness', href: '/fitness', key: 'fitness' as keyof PillarScores, cls: 'bg-fitness-light text-fitness-text' },
-  { label: 'Family', href: '/family', key: 'family' as keyof PillarScores, cls: 'bg-family-light text-family-text' },
+  {
+    label: 'Circles',
+    href: '/circles',
+    key: 'family' as keyof PillarScores,
+    cls: 'bg-family-light text-family-text',
+    title: 'Family pillar score · pairing & groups on Circles',
+  },
 ] as const
 
 function ModuleNav({ pillars }: { pillars: PillarScores }) {
@@ -60,6 +66,7 @@ function ModuleNav({ pillars }: { pillars: PillarScores }) {
           <Link
             key={m.href}
             href={m.href}
+            title={'title' in m ? m.title : undefined}
             className={cn(
               'flex min-h-[3rem] items-center justify-between rounded-xl border px-4 py-3.5 transition-colors',
               active
@@ -67,7 +74,7 @@ function ModuleNav({ pillars }: { pillars: PillarScores }) {
                 : 'border-surface-border bg-surface-card hover:bg-surface-raised',
             )}
           >
-            <span className={cn('text-[14px] leading-tight', active ? 'font-medium text-brand-500' : 'text-ink-secondary')}>
+            <span className={cn('text-[15px] leading-tight', active ? 'font-medium text-brand-500' : 'text-ink-secondary')}>
               {m.label}
             </span>
             {isTasks ? (
@@ -121,8 +128,8 @@ function PrayerButtons() {
             )}
           >
             {isNext && !prayed && (
-              <span className="absolute -top-px left-1/2 -translate-x-1/2 bg-brand-400 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-b-md tracking-wide whitespace-nowrap">
-                UP NEXT {pt ? `· ${pt.formattedTime}` : ''}
+              <span className="absolute -top-px left-1/2 -translate-x-1/2 bg-brand-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-b-md tracking-wide whitespace-nowrap">
+                NEXT {pt ? `· ${pt.formattedTime}` : ''}
               </span>
             )}
             <div
@@ -141,10 +148,10 @@ function PrayerButtons() {
                 </svg>
               )}
             </div>
-            <span className={cn('text-[11px] font-semibold mb-0.5', prayed ? 'text-faith-text' : isNext ? 'text-brand-400' : 'text-ink-secondary')}>
+            <span className={cn('text-[13px] font-semibold mb-0.5', prayed ? 'text-faith-text' : isNext ? 'text-brand-400' : 'text-ink-secondary')}>
               {name.charAt(0).toUpperCase() + name.slice(1)}
             </span>
-            <span className="text-[10px] text-ink-ghost">{pt?.formattedTime ?? '--:--'}</span>
+            <span className="text-[11px] text-ink-ghost">{pt?.formattedTime ?? '--:--'}</span>
           </button>
         )
       })}
@@ -153,7 +160,7 @@ function PrayerButtons() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   CENTER — OPERATING SYSTEM SCORES (2 × 2)
+   WEEK REVIEW DRILLDOWN — pillar chips (same keys as ModuleNav; not shown in center)
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 const OS_ITEMS = [
@@ -162,24 +169,6 @@ const OS_ITEMS = [
   { label: 'Fitness', key: 'fitness' as keyof PillarScores, hint: 'Sessions logged', badge: 'bg-fitness-light text-fitness-text' },
   { label: 'Family', key: 'family' as keyof PillarScores, hint: 'Touchpoints captured', badge: 'bg-family-light text-family-text' },
 ] as const
-
-function OSScoresGrid({ pillars }: { pillars: PillarScores }) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      {OS_ITEMS.map((item) => (
-        <div key={item.key} className="rounded-xl border border-surface-border bg-surface-raised p-3.5">
-          <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold', item.badge)}>
-            {item.label}
-          </span>
-          <p className="mt-2.5 text-[28px] font-semibold tracking-tight text-ink-primary">
-            {String(pillars[item.key]).padStart(2, '0')}
-          </p>
-          <p className="mt-1 text-[11px] text-ink-ghost">{item.hint}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    CENTER — PRAYER HEAT MAP
@@ -197,13 +186,13 @@ function PrayerHeatMap() {
       <div className="grid" style={{ gridTemplateColumns: '36px repeat(7, 1fr)', gap: '3px', alignItems: 'center' }}>
         <div />
         {days.map((d, i) => (
-          <div key={i} className={cn('text-center text-[9px] pb-1', i === todayIdx ? 'text-brand-400 font-semibold' : 'text-ink-ghost')}>
+          <div key={i} className={cn('text-center text-[11px] pb-1', i === todayIdx ? 'text-brand-400 font-semibold' : 'text-ink-ghost')}>
             {d}
           </div>
         ))}
         {PRAYER_ORDER.map((prayer) => (
           <div key={prayer} className="contents">
-            <div className="text-[9px] text-ink-ghost text-right pr-1.5">
+            <div className="text-[11px] text-ink-ghost text-right pr-1.5">
               {prayer.charAt(0).toUpperCase() + prayer.slice(1)}
             </div>
             {dates.map((date, i) => {
@@ -228,7 +217,7 @@ function PrayerHeatMap() {
           { color: 'var(--chart-success)', label: 'Prayed', bordered: false },
           { color: 'var(--chart-track)', label: 'Missed', bordered: true },
         ].map(({ color, label, bordered }) => (
-          <div key={label} className="flex items-center gap-1.5 text-[9px] text-ink-ghost">
+          <div key={label} className="flex items-center gap-1.5 text-[11px] text-ink-ghost">
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: color, border: bordered ? '1px solid rgb(var(--surface-border))' : undefined }} />
             {label}
           </div>
@@ -343,7 +332,7 @@ function DhikrCounter() {
     <div className="space-y-2">
       {items.map(({ key, label }) => (
         <div key={key} className="flex items-center justify-between px-3 py-2.5 bg-surface-raised border border-surface-border rounded-lg">
-          <span className="text-[12px] text-ink-secondary">{label}</span>
+          <span className="text-[13px] text-ink-secondary">{label}</span>
           <div className="flex items-center gap-2">
             <span className="text-[14px] font-semibold text-brand-400">{dhikr[key]}</span>
             <button
@@ -381,7 +370,7 @@ function SidebarCard({
     <div className={cn('rounded-2xl border border-surface-border bg-surface-card p-4', className)}>
       {title && (
         <div className="mb-3">
-          <h3 className="text-[13px] font-semibold text-ink-primary">{title}</h3>
+          <h3 className="text-[15px] font-semibold text-ink-primary">{title}</h3>
           {description && <p className="mt-0.5 text-[11px] text-ink-ghost">{description}</p>}
         </div>
       )}
@@ -566,15 +555,12 @@ export default function FaithPage() {
         left={
           <>
             {/* Weekly rhythm card */}
-            <div className="rounded-2xl border border-surface-border bg-surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 border border-brand-200">
-                  <BookOpenText className="h-5 w-5 text-brand-400" />
+            <div className="rounded-2xl border border-surface-border bg-surface-card px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 border border-brand-200">
+                  <BookOpenText className="h-4 w-4 text-brand-400" />
                 </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-ink-primary">Weekly rhythm</p>
-                  <p className="text-[10px] text-ink-ghost">Anchored to prayer windows</p>
-                </div>
+                <p className="text-[14px] font-semibold text-ink-primary">Weekly rhythm</p>
               </div>
             </div>
 
@@ -583,11 +569,11 @@ export default function FaithPage() {
 
             {/* Target score */}
             <div className="rounded-2xl border border-surface-border bg-surface-card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">Target</p>
-              <p className="mt-2 text-[28px] font-semibold tracking-tight text-ink-primary">
-                {score.total} <span className="text-[16px] font-normal text-ink-ghost">/ 100</span>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">Score</p>
+              <p className="mt-2 text-[32px] font-semibold tracking-tight text-ink-primary">
+                {score.total} <span className="text-[17px] font-normal text-ink-ghost">/ 100</span>
               </p>
-              <p className="mt-1.5 text-[12px] leading-5 text-ink-secondary">{scoreLabel(score.total)}</p>
+              <p className="mt-1 text-[12px] text-ink-secondary">{scoreLabel(score.total)}</p>
             </div>
           </>
         }
@@ -597,7 +583,7 @@ export default function FaithPage() {
             {/* Prayer check-in (hero) */}
             <DashboardPanel
               title="Prayer check-in"
-              description="Mark each prayer as you complete it and keep your day aligned in real time."
+              description="Mark each prayer as you complete it."
               action={
                 <div className="flex gap-2">
                   <button onClick={() => setReviewOpen(true)} className="btn-secondary text-[12px] px-3 py-1.5">
@@ -612,36 +598,31 @@ export default function FaithPage() {
               <PrayerButtons />
             </DashboardPanel>
 
-            {/* OS scores + Goals (side by side) */}
-            <div className="grid gap-5 lg:grid-cols-2">
-              <DashboardPanel
-                title="Operating system scores"
-                description="Every pillar updates without turning life into a public scoreboard."
-              >
-                <OSScoresGrid pillars={score.pillars} />
-              </DashboardPanel>
-
-              <DashboardPanel
-                stretchContent
-                title="Tasks for Today"
-                description="From your planner for today — check off, add a line, or open Tasks for the full view."
-              >
-                <TasksForToday />
-              </DashboardPanel>
-            </div>
+            <DashboardPanel
+              stretchContent
+              title="Tasks for Today"
+              description="Scheduled tasks for today."
+              action={
+                <Link href="/tasks" className="btn-secondary text-[12px] px-3 py-1.5 whitespace-nowrap">
+                  Open Tasks
+                </Link>
+              }
+            >
+              <TasksForToday />
+            </DashboardPanel>
 
             {/* Heat map + Quran (side by side) */}
             <div className="grid gap-5 lg:grid-cols-2">
               <DashboardPanel
                 title="Prayer heat map"
-                description="See how consistently each prayer was protected across the week."
+                description="This week's prayer consistency."
               >
                 <PrayerHeatMap />
               </DashboardPanel>
 
               <DashboardPanel
                 title="Quran this week"
-                description="Capture what you read and keep a lightweight weekly reading log."
+                description="Log what you read this week."
               >
                 <QuranLog />
               </DashboardPanel>
@@ -662,9 +643,9 @@ export default function FaithPage() {
                     ['Dhikr', Math.min(Math.round(((history.at(-1) ?? 0) / 100) * 80), 100)],
                   ] as [string, number][]).map(([label, value]) => (
                     <div key={label} className="flex items-center gap-2">
-                      <span className="w-10 text-[11px] text-ink-muted">{label}</span>
+                      <span className="w-10 text-[12px] text-ink-muted">{label}</span>
                       <ProgressBar value={value} color="bg-brand-400" className="flex-1" />
-                      <span className="w-8 text-right text-[11px] font-medium text-ink-primary">{value}%</span>
+                      <span className="w-8 text-right text-[12px] font-medium text-ink-primary">{value}%</span>
                     </div>
                   ))}
                 </div>
@@ -675,19 +656,19 @@ export default function FaithPage() {
             {nextPrayer && (
               <SidebarCard>
                 <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-4 text-center">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-400">
                     {nextPrayer.displayName} in
                   </p>
-                  <p className="mt-2 text-[30px] font-semibold tracking-tight text-ink-primary">
+                  <p className="mt-2 text-[34px] font-semibold tracking-tight text-ink-primary">
                     {countdownLabel ?? '--'}
                   </p>
-                  <p className="mt-1 text-[12px] text-ink-ghost">{nextPrayer.formattedTime}</p>
+                  <p className="mt-1 text-[13px] text-ink-ghost">{nextPrayer.formattedTime}</p>
                 </div>
               </SidebarCard>
             )}
 
             {/* 8-week trend (interactive) */}
-            <SidebarCard title="8-week trend" description="Tap a bar to see that week's full history.">
+            <SidebarCard title="8-week trend" description="Tap a bar for weekly breakdown.">
               <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
                 <div className="mb-1 flex h-14 items-end gap-1">
                   {trendScores.map((entry, index) => {
@@ -740,7 +721,7 @@ export default function FaithPage() {
             )}
 
             {/* Accountability */}
-            <SidebarCard title="Score-only accountability" description="Partners see scores, never raw data.">
+            <SidebarCard title="Accountability">
               <AccountabilityPanel />
             </SidebarCard>
 

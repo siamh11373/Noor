@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   clampTaskToDay,
   DAY_END_MINUTES,
@@ -497,61 +497,8 @@ export function CalendarDayColumn({
         </>
       )}
 
-      {prayerTimes.map((pt) => {
-        const mins = prayerToMinutes(pt)
-        if (mins === null) return null
-        const top = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT
-        if (top < 0 || top > TOTAL_HOURS * HOUR_HEIGHT) return null
-        return (
-          <div
-            key={pt.name}
-            className={cn(
-              'pointer-events-none absolute z-10 flex items-center',
-              isWeek ? 'inset-x-0.5' : 'inset-x-0 pl-16',
-            )}
-            style={{ top }}
-          >
-            <div
-              className={cn(
-                'flex items-center gap-1 rounded-md border border-faith-border/40 bg-faith-light/80',
-                isWeek ? 'flex-1 px-1.5 py-0.5' : 'flex-1 gap-2 px-3 py-1',
-              )}
-            >
-              <span className={cn('font-semibold text-faith-text', isWeek ? 'truncate text-[8px]' : 'text-[10px]')}>
-                {pt.displayName}
-              </span>
-              <span className={cn('text-faith-text/60', isWeek ? 'shrink-0 text-[7px]' : 'text-[10px]')}>
-                {pt.formattedTime}
-              </span>
-            </div>
-          </div>
-        )
-      })}
-
-      {isToday && (
-        <div
-          className={cn(
-            'pointer-events-none absolute inset-x-0 z-20 flex items-center gap-0',
-            isWeek ? 'px-0.5' : 'pl-14',
-          )}
-          style={{
-            top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT,
-            transform: 'translateY(-50%)',
-          }}
-        >
-          <div
-            className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-surface-border bg-surface-card shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
-            aria-hidden
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- tiny inline badge; public asset */}
-            <img src="/logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
-          </div>
-          <div className="min-h-0 flex-1 border-t-[2.5px] border-ink-primary" />
-        </div>
-      )}
-
       <div
-        className={cn('absolute cursor-pointer', isWeek ? 'inset-0' : 'inset-0 left-16')}
+        className={cn('absolute z-[15] cursor-pointer', isWeek ? 'inset-0' : 'inset-0 left-16')}
         onClick={handleGridClick}
       />
 
@@ -568,7 +515,7 @@ export function CalendarDayColumn({
               key={`${g.id}-week-holo`}
               aria-hidden
               className={cn(
-                'pointer-events-none absolute z-[29] flex flex-col overflow-hidden rounded-lg border border-dashed px-0',
+                'pointer-events-none absolute z-[40] flex flex-col overflow-hidden rounded-lg border border-dashed px-0',
                 isWeek ? 'inset-x-0.5 text-[10px]' : 'left-[72px] right-2',
                 colors.bg,
                 colors.border,
@@ -705,6 +652,71 @@ export function CalendarDayColumn({
           </div>
         )
       })}
+
+      {/* Single overlay stacking context — sits above all task blocks regardless of their z-index
+          or GPU compositing layer. pointer-events-none so drag/click passes through to tasks/grid. */}
+      <div className="pointer-events-none absolute inset-0" style={{ zIndex: 200 }}>
+        {prayerTimes.map((pt) => {
+          const mins = prayerToMinutes(pt)
+          if (mins === null) return null
+          const top = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT
+          if (top < 0 || top > TOTAL_HOURS * HOUR_HEIGHT) return null
+          const inset = isWeek ? 'inset-x-0.5' : 'inset-x-0 pl-16'
+          return (
+            <Fragment key={pt.name}>
+              {/* Prayer separator line */}
+              <div
+                className={cn('absolute', inset)}
+                style={{ top, transform: 'translateY(-50%)' }}
+              >
+                <div className="h-[2px] w-full rounded-full bg-gradient-to-r from-faith/85 via-faith/50 to-faith/15" />
+              </div>
+              {/* Prayer label pill — no backdrop-blur to avoid GPU compositing layer reordering */}
+              <div
+                className={cn('absolute flex items-center', inset)}
+                style={{ top, transform: 'translateY(-50%)' }}
+              >
+                <div
+                  className={cn(
+                    'flex items-center gap-1 rounded-md border border-faith-border/60 bg-faith-light shadow-sm',
+                    isWeek ? 'flex-1 px-1.5 py-0.5' : 'flex-1 gap-2 px-3 py-1',
+                  )}
+                >
+                  <span className={cn('font-semibold text-faith-text', isWeek ? 'truncate text-[8px]' : 'text-[10px]')}>
+                    {pt.displayName}
+                  </span>
+                  <span className={cn('text-faith-text/60', isWeek ? 'shrink-0 text-[7px]' : 'text-[10px]')}>
+                    {pt.formattedTime}
+                  </span>
+                </div>
+              </div>
+            </Fragment>
+          )
+        })}
+
+        {/* Current time indicator — rendered after prayers so it paints above them if they coincide */}
+        {isToday && (
+          <div
+            className={cn(
+              'absolute inset-x-0 flex items-center gap-0',
+              isWeek ? 'px-0.5' : 'pl-14',
+            )}
+            style={{
+              top: ((currentMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT,
+              transform: 'translateY(-50%)',
+            }}
+          >
+            <div
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-surface-border bg-surface-card shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+              aria-hidden
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- tiny inline badge; public asset */}
+              <img src="/logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
+            </div>
+            <div className="min-h-0 flex-1 border-t-[2.5px] border-ink-primary" />
+          </div>
+        )}
+      </div>
     </div>
   )
 

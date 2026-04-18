@@ -64,9 +64,9 @@
     /* Ink — 5-level text hierarchy */
     --ink-primary:   28 30 34;
     --ink-secondary: 107 114 128;
-    --ink-muted:     132 137 146;
-    --ink-faint:     156 160 168;
-    --ink-ghost:     178 182 190;
+    --ink-muted:     88  94 108;
+    --ink-faint:     108 114 128;
+    --ink-ghost:     128 134 148;
 
     /* Semantic states */
     --success-fill:   238 241 236;
@@ -146,9 +146,9 @@
 
     --ink-primary:   236 240 243;
     --ink-secondary: 194 202 208;
-    --ink-muted:     158 168 176;
-    --ink-faint:     124 134 144;
-    --ink-ghost:     98 108 118;
+    --ink-muted:     175 183 192;
+    --ink-faint:     148 157 167;
+    --ink-ghost:     122 132 142;
 
     --success-fill:   22 36 28;
     --success-text:   172 212 182;

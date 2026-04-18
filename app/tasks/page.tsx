@@ -28,7 +28,7 @@ import {
 import { useSalahStore } from '@/lib/store'
 import { useLgUp } from '@/hooks/useLgUp'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
-import { computePrayerTimesForDates } from '@/lib/prayers'
+import { computePrayerTimesForDates, DEFAULT_PRAYER_COORDS } from '@/lib/prayers'
 import { CalendarDays, ListChecks, PanelLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PillarKey, PrayerTime } from '@/types'
@@ -330,6 +330,7 @@ export default function TasksPage() {
     updateCalendarTask,
     deleteCalendarTask,
     toggleCalendarTask,
+    updateSettings,
   } = useSalahStore()
 
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('time')
@@ -340,15 +341,37 @@ export default function TasksPage() {
 
   const computeWeekPrayers = useCallback(
     async (centerDate: Date) => {
-      const lat = settings.location.lat
-      const lng = settings.location.lng
-      if (lat == null || lng == null) return
+      let lat = settings.location.lat
+      let lng = settings.location.lng
+
+      // Match usePrayerTimes: week grid used to bail out when coords were unset, so
+      // others with saved location saw prayers all week while this path showed none.
+      if (lat == null || lng == null) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((res, rej) =>
+            navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 }),
+          )
+          lat = pos.coords.latitude
+          lng = pos.coords.longitude
+          updateSettings({ location: { lat, lng, city: settings.location.city ?? '' } })
+        } catch {
+          lat = DEFAULT_PRAYER_COORDS.lat
+          lng = DEFAULT_PRAYER_COORDS.lng
+        }
+      }
 
       const dates = getWeekDates(centerDate)
       const result = await computePrayerTimesForDates(lat, lng, settings.madhab, settings.calcMethod, dates)
       setWeekPrayerTimes(result)
     },
-    [settings.location.lat, settings.location.lng, settings.madhab, settings.calcMethod],
+    [
+      settings.location.lat,
+      settings.location.lng,
+      settings.location.city,
+      settings.madhab,
+      settings.calcMethod,
+      updateSettings,
+    ],
   )
 
   useEffect(() => {

@@ -1,5 +1,8 @@
 import type { PrayerTime, PrayerName, Madhab, CalcMethod } from '@/types'
 
+/** Warren, MI — matches usePrayerTimes when geolocation is unavailable or denied. */
+export const DEFAULT_PRAYER_COORDS = { lat: 42.5145, lng: -83.0146 } as const
+
 // Adhan.js is imported dynamically (client-only) because it uses browser APIs
 // Use getPrayerTimes() from the hook, not directly.
 

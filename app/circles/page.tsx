@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown, Plus, Sparkles, UserPlus } from 'lucide-react'
@@ -15,6 +14,11 @@ import {
 } from '@/components/circles/CircleLeaderboardKit'
 import { useWeeklyScore } from '@/hooks/useWeeklyScore'
 import { useSalahStore } from '@/lib/store'
+import {
+  JoinPairingDialog,
+  PairingInviteLinkDialog,
+  PairingPendingInviteRow,
+} from '@/components/accountability/PairingInviteDialogs'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { Badge } from '@/components/ui'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -53,7 +57,7 @@ function friendlyCircleRpcError(message: string): string {
 export default function CirclesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { client, profile, user, refreshCircles } = useAuth()
+  const { client, profile, user, refreshCircles, refreshAccountability } = useAuth()
   const weeklyScore = useWeeklyScore()
   const accountabilityPeers = useSalahStore((s) => s.accountabilityPeers)
   const pendingInvites = useSalahStore((s) => s.pendingInvites)
@@ -71,13 +75,13 @@ export default function CirclesPage() {
   const [dialogError, setDialogError] = useState('')
   const [inviteLink, setInviteLink] = useState('')
   const [inviteCopied, setInviteCopied] = useState(false)
+  const [pairingInviteOpen, setPairingInviteOpen] = useState(false)
+  const [pairingJoinOpen, setPairingJoinOpen] = useState(false)
 
-  const familyInvite = searchParams.get('invite')
+  const pairInviteFromUrl = searchParams.get('invite')?.trim() ?? ''
   useEffect(() => {
-    if (familyInvite) {
-      router.replace(`/family?invite=${encodeURIComponent(familyInvite)}`)
-    }
-  }, [familyInvite, router])
+    if (pairInviteFromUrl) setPairingJoinOpen(true)
+  }, [pairInviteFromUrl])
 
   const circleInviteCode = searchParams.get('circleInvite')?.trim() ?? ''
   useEffect(() => {
@@ -206,17 +210,6 @@ export default function CirclesPage() {
     await refreshCircles()
   }
 
-  if (familyInvite) {
-    return (
-      <div className="flex min-h-[45vh] items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm rounded-2xl border border-surface-border bg-surface-card p-8 text-center shadow-card">
-          <p className="text-[13px] font-medium text-ink-primary">Opening Family…</p>
-          <p className="mt-2 text-[12px] text-ink-muted">Pairing invites open there.</p>
-        </div>
-      </div>
-    )
-  }
-
   if (circleInviteCode && searchParams.get('circleInvite')) {
     return (
       <div className="flex min-h-[45vh] flex-col items-center justify-center gap-3 px-4 py-12">
@@ -256,7 +249,7 @@ export default function CirclesPage() {
                 <span>{activeCircle.memberCount} members</span>
               </>
             ) : (
-              <>Named groups or 1:1 pairings from Family · Monday reset</>
+              <>Named circles and 1:1 pairing · Monday reset</>
             )}
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -264,22 +257,45 @@ export default function CirclesPage() {
               <Plus className="h-3.5 w-3.5" aria-hidden />
               New circle
             </button>
+            <button
+              type="button"
+              onClick={() => setPairingJoinOpen(true)}
+              className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px]"
+            >
+              Join with code
+            </button>
+            <button
+              type="button"
+              onClick={() => setPairingInviteOpen(true)}
+              className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px]"
+            >
+              <UserPlus className="h-3.5 w-3.5" aria-hidden />
+              Pairing invite
+            </button>
             {useNamedCircles && activeCircleId ? (
               <button
                 type="button"
                 onClick={() => void openInviteDialog()}
                 disabled={dialogBusy}
-                className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px]"
+                className="btn-secondary inline-flex items-center gap-1.5 border-brand-200 px-3 py-1.5 text-[12px] dark:border-brand-800"
               >
                 <UserPlus className="h-3.5 w-3.5" aria-hidden />
-                Invite link
+                Circle invite link
               </button>
             ) : null}
-            <Link href="/family" className="btn-ghost px-3 py-1.5 text-[12px]">
-              Family pairings →
-            </Link>
           </div>
         </header>
+
+        {pendingInvites.length > 0 ? (
+          <div className="mx-auto mb-8 w-full max-w-lg">
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">Your pairing invites</p>
+            <div className="space-y-2">
+              {pendingInvites.map((inv) => (
+                <PairingPendingInviteRow key={inv.id} invite={inv} />
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {useNamedCircles ? (
           <div className="ui-segment mx-auto mb-8 flex max-w-full flex-wrap justify-center gap-0.5 overflow-x-auto p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:max-w-2xl [&::-webkit-scrollbar]:hidden">
@@ -561,6 +577,20 @@ export default function CirclesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PairingInviteLinkDialog open={pairingInviteOpen} onOpenChange={setPairingInviteOpen} />
+      <JoinPairingDialog
+        open={pairingJoinOpen}
+        onOpenChange={(open) => {
+          setPairingJoinOpen(open)
+          if (!open && pairInviteFromUrl) router.replace('/circles')
+        }}
+        initialCode={pairInviteFromUrl}
+        onAccepted={() => {
+          void refreshAccountability()
+          router.replace('/circles')
+        }}
+      />
     </div>
   )
 }
