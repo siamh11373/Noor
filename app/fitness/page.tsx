@@ -308,7 +308,7 @@ export default function FitnessPage() {
       <div className="mb-5 flex items-center justify-between rounded-2xl border border-surface-border bg-surface-card px-5 py-4">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-[12px] text-ink-ghost">Today&apos;s focus</p>
+            <p className="text-[12px] text-ink-ghost">{"Today's focus"}</p>
             <p className="text-[24px] font-semibold leading-tight text-ink-primary">{todayMuscle}</p>
           </div>
           <div className="mx-1 hidden h-9 w-px bg-surface-border sm:block" />
@@ -339,7 +339,7 @@ export default function FitnessPage() {
 
             {/* ── Today's session (workout type + exercises merged) ── */}
             <DashboardPanel
-              title="Today's session"
+              title={"Today's session"}
               action={
                 <button onClick={() => setExerciseOpen(true)} className="btn-primary px-4 py-2 text-[13px]">
                   + Add exercise
