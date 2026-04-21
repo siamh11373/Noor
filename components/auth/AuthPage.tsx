@@ -252,7 +252,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             if (!client || !isConfigured) return
             void client.auth.signInWithOAuth({
               provider: 'google',
-              options: { redirectTo: redirectTarget },
+              options: { redirectTo: `${getSiteUrl()}/auth/callback` },
             })
           }}
           disabled={!isConfigured}
