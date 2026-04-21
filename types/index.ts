@@ -76,6 +76,12 @@ export interface DhikrCount {
   allahuAkbar: number
 }
 
+export interface CustomDhikrItem {
+  id: string
+  label: string
+  count: number
+}
+
 // ─── FITNESS ─────────────────────────────────────────────────────────────────
 
 export type ExerciseType =
@@ -336,6 +342,7 @@ export interface SalahDataState {
   personalRecords: PersonalRecord[]
   savingsGoals: SavingsGoal[]
   dhikr: DhikrCount
+  customDhikr: CustomDhikrItem[]
   settings: UserSettings
 }
 

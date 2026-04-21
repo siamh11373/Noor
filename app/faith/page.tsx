@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { useFaithShortcuts } from '@/hooks/useFaithShortcuts'
 import type { PillarScores } from '@/types'
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -249,6 +250,7 @@ function QuranLog() {
     <div>
       <div className="flex gap-2 mb-3">
         <input
+          id="faith-quran-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
@@ -319,32 +321,134 @@ function AccountabilityPanel() {
    RIGHT SIDEBAR — DHIKR COUNTER
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-function DhikrCounter() {
-  const { dhikr, incrementDhikr, resetDhikr } = useSalahStore()
+function DhikrRow({
+  label,
+  count,
+  onIncrement,
+  onSetCount,
+  onDelete,
+}: {
+  label: string
+  count: number
+  onIncrement: () => void
+  onSetCount: (n: number) => void
+  onDelete?: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
 
-  const items = [
+  function startEdit() {
+    setDraft(String(count))
+    setEditing(true)
+  }
+
+  function commitEdit() {
+    const n = parseInt(draft, 10)
+    if (!isNaN(n)) onSetCount(n)
+    setEditing(false)
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-surface-border bg-surface-raised px-3 py-2.5">
+      <span className="min-w-0 flex-1 truncate text-[13px] text-ink-secondary">{label}</span>
+      <div className="flex shrink-0 items-center gap-1.5">
+        {editing ? (
+          <input
+            autoFocus
+            type="number"
+            min="0"
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
+            className="w-16 rounded-lg border border-brand-300 bg-surface-card px-2 py-1 text-center text-[13px] font-semibold text-brand-400 outline-none focus:ring-1 focus:ring-brand-400/30"
+          />
+        ) : (
+          <button
+            onClick={startEdit}
+            title="Tap to edit count"
+            className="w-10 text-right text-[14px] font-semibold text-brand-400 transition-colors hover:text-brand-500"
+          >
+            {count}
+          </button>
+        )}
+        <button
+          onClick={onIncrement}
+          className="flex h-6 w-6 items-center justify-center rounded-full border border-brand-200 bg-brand-50 text-brand-400 transition-colors hover:bg-brand-100"
+        >
+          +
+        </button>
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            title="Remove"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-ink-ghost transition-colors hover:bg-surface-muted hover:text-ink-muted"
+          >
+            ×
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DhikrCounter() {
+  const { dhikr, customDhikr, incrementDhikr, setDhikrCount, resetDhikr, addCustomDhikr, setCustomDhikrCount, deleteCustomDhikr } = useSalahStore()
+  const [newLabel, setNewLabel] = useState('')
+
+  const builtIn = [
     { key: 'subhanAllah' as const, label: 'SubhanAllah' },
     { key: 'alhamdulillah' as const, label: 'Alhamdulillah' },
     { key: 'allahuAkbar' as const, label: 'Allahu Akbar' },
   ]
 
+  function handleAdd() {
+    if (!newLabel.trim()) return
+    addCustomDhikr(newLabel)
+    setNewLabel('')
+  }
+
   return (
     <div className="space-y-2">
-      {items.map(({ key, label }) => (
-        <div key={key} className="flex items-center justify-between px-3 py-2.5 bg-surface-raised border border-surface-border rounded-lg">
-          <span className="text-[13px] text-ink-secondary">{label}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-[14px] font-semibold text-brand-400">{dhikr[key]}</span>
-            <button
-              onClick={() => incrementDhikr(key)}
-              className="w-6 h-6 rounded-full bg-brand-50 border border-brand-200 text-brand-400 text-base flex items-center justify-center hover:bg-brand-100 transition-colors"
-            >
-              +
-            </button>
-          </div>
-        </div>
+      {builtIn.map(({ key, label }) => (
+        <DhikrRow
+          key={key}
+          label={label}
+          count={dhikr[key]}
+          onIncrement={() => incrementDhikr(key)}
+          onSetCount={n => setDhikrCount(key, n)}
+        />
       ))}
-      <button onClick={resetDhikr} className="w-full text-[11px] text-ink-ghost hover:text-ink-muted transition-colors py-1">
+
+      {customDhikr.map(item => (
+        <DhikrRow
+          key={item.id}
+          label={item.label}
+          count={item.count}
+          onIncrement={() => setCustomDhikrCount(item.id, item.count + 1)}
+          onSetCount={n => setCustomDhikrCount(item.id, n)}
+          onDelete={() => deleteCustomDhikr(item.id)}
+        />
+      ))}
+
+      <div className="flex gap-1.5 pt-1">
+        <input
+          value={newLabel}
+          onChange={e => setNewLabel(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          placeholder="Add custom dhikr…"
+          className="input-base flex-1 py-1.5 text-[13px]"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!newLabel.trim()}
+          className="btn-primary px-3 py-1.5 text-[13px] disabled:opacity-40"
+        >
+          Add
+        </button>
+      </div>
+
+      <button onClick={resetDhikr} className="w-full py-1 text-[11px] text-ink-ghost transition-colors hover:text-ink-muted">
         Reset all
       </button>
     </div>
@@ -540,6 +644,11 @@ export default function FaithPage() {
   const [dhikrOpen, setDhikrOpen] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null)
 
+  useFaithShortcuts({
+    openFridayReview: () => setReviewOpen(true),
+    openDhikrLog: () => setDhikrOpen(true),
+  })
+
   const fridayReview = getWeeklyRecord().fridayReview
   const todayPrayers = Object.values(getDailyLog().prayers).filter(Boolean).length
   const quranMinutes = getWeekDateStrings().reduce(
@@ -600,8 +709,8 @@ export default function FaithPage() {
 
             <DashboardPanel
               stretchContent
-              title="Tasks for Today"
-              description="Scheduled tasks for today."
+              title="Daily tasks"
+              description="Navigate between days to plan ahead or review."
               action={
                 <Link href="/tasks" className="btn-secondary text-[12px] px-3 py-1.5 whitespace-nowrap">
                   Open Tasks
