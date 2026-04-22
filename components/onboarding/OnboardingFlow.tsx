@@ -7,6 +7,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { upsertUserStateAndSnapshot } from '@/lib/supabase/state-sync'
 import { serializeStoreData, useSalahStore } from '@/lib/store'
 import type { CalcMethod, Madhab, SplitDay } from '@/types'
+import { MADHAB_OPTIONS as MADHAB_META_OPTIONS, MADHAB_META } from '@/lib/madhabs'
 import { cn } from '@/lib/utils'
 
 const STEP_TITLES = ['Profile', 'Prayer Setup', 'Daily Rhythm', 'Weekly Defaults', 'Accountability'] as const
@@ -21,10 +22,10 @@ const DAY_LABELS: Record<(typeof SPLIT_DAYS)[number], string> = {
   sunday: 'Sunday',
 }
 const SPLIT_OPTIONS: SplitDay[] = ['Chest', 'Back', 'Arms', 'Legs', 'Shoulders', 'Full Body', 'Cardio', 'Rest']
-const MADHAB_OPTIONS: { value: Madhab; label: string }[] = [
-  { value: 'hanafi', label: 'Hanafi' },
-  { value: 'shafii', label: 'Shafii' },
-]
+const MADHAB_OPTIONS: { value: Madhab; label: string }[] = MADHAB_META_OPTIONS.map(m => ({
+  value: m.value,
+  label: m.label,
+}))
 const CALC_OPTIONS: { value: CalcMethod; label: string }[] = [
   { value: 'ISNA', label: 'ISNA' },
   { value: 'MWL', label: 'Muslim World League' },
@@ -49,6 +50,7 @@ export function OnboardingFlow() {
   const personalRecords = useSalahStore(state => state.personalRecords)
   const savingsGoals = useSalahStore(state => state.savingsGoals)
   const dhikr = useSalahStore(state => state.dhikr)
+  const customDhikr = useSalahStore(state => state.customDhikr)
   const onboardingDraft = useSalahStore(state => state.onboardingDraft)
   const onboardingStep = useSalahStore(state => state.onboardingStep)
   const patchOnboardingDraft = useSalahStore(state => state.patchOnboardingDraft)
@@ -87,9 +89,10 @@ export function OnboardingFlow() {
       personalRecords,
       savingsGoals,
       dhikr,
+      customDhikr,
       settings: nextSettings,
     })
-  }, [calendarTasks, dailyLogs, dhikr, foodLog, onboardingDraft, personalRecords, savingsGoals, settings, taskMonthNotes, weeklyRecords])
+  }, [calendarTasks, customDhikr, dailyLogs, dhikr, foodLog, onboardingDraft, personalRecords, savingsGoals, settings, taskMonthNotes, weeklyRecords])
 
   function nextStep() {
     setOnboardingStep(Math.min(currentStep + 1, totalSteps - 1))
@@ -265,6 +268,10 @@ export function OnboardingFlow() {
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
+                <p className="mt-1.5 text-[11px] leading-snug text-ink-ghost">
+                  {MADHAB_META[onboardingDraft.madhab].description}{' '}
+                  <span className="text-ink-faint">Hanafi uses shadow × 2; Shafi&rsquo;i, Maliki, and Hanbali share shadow × 1.</span>
+                </p>
               </Field>
               <Field label="Calculation method">
                 <select

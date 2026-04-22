@@ -301,7 +301,7 @@ export interface OnboardingDraft {
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 
-export type Madhab = 'hanafi' | 'shafii'
+export type Madhab = 'hanafi' | 'shafii' | 'maliki' | 'hanbali'
 export type CalcMethod = 'ISNA' | 'MWL' | 'Egypt' | 'Karachi' | 'UmmAlQura'
 
 export interface UserSettings {

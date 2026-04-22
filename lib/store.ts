@@ -510,6 +510,7 @@ type UndoablePart = Pick<
   | 'personalRecords'
   | 'savingsGoals'
   | 'dhikr'
+  | 'customDhikr'
   | 'settings'
 >
 

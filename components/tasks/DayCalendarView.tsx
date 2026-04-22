@@ -37,8 +37,9 @@ export function DayCalendarView({
   useEffect(() => {
     if (!scrollRef.current) return
     if (isToday) {
-      // scroll to 2 hours before current time so current time is near top of viewport
-      const scrollTo = Math.max(0, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
+      // scroll to 2 hours before current time, but never earlier than 7 AM
+      const DEFAULT_START_HOUR = 7
+      const scrollTo = Math.max((DEFAULT_START_HOUR - START_HOUR) * HOUR_HEIGHT, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
       scrollRef.current.scrollTop = scrollTo
     } else {
       // default past/future dates to 7 AM so the view opens at morning, not midnight
@@ -50,8 +51,7 @@ export function DayCalendarView({
     <div
       ref={scrollRef}
       data-task-day-grid
-      className="overflow-y-auto"
-      style={{ height: 'calc(100vh - 180px)' }}
+      className="h-full overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent_0,black_16px,black_calc(100%-24px),transparent_100%)]"
     >
       <CalendarDayColumn
         variant="day"

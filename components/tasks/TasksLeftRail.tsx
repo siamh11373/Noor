@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { parseDateKey } from '@/lib/date'
 import { TasksMiniMonth } from '@/components/tasks/TasksMiniMonth'
 import { TasksMonthFocusCard } from '@/components/tasks/TasksMonthFocusCard'
+import { TimerRailCard } from '@/components/timer/TimerRailCard'
 import { TASK_PILLAR_STYLES } from '@/lib/tasks-calendar'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PrayerTime } from '@/types'
@@ -100,6 +101,8 @@ export function TasksLeftRail({
         </button>
       </div>
 
+      <TimerRailCard onOpen={() => onClose?.()} />
+
       <div className="rounded-xl border border-faith-border/50 bg-faith-light/60 px-3 py-3 dark:border-faith-border/30 dark:bg-faith-light/10">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-faith-text/80 dark:text-faith-text/70">Next prayer</p>
         {prayerLoading ? (
@@ -147,7 +150,7 @@ export function TasksLeftRail({
   }
 
   return (
-    <aside className="flex w-[272px] shrink-0 flex-col border-r border-surface-border bg-surface-raised/50 p-4 dark:bg-surface-raised/30">
+    <aside className="rail-scroll flex h-full w-[272px] min-w-0 shrink-0 flex-col border-r border-surface-border bg-surface-raised/50 p-4 dark:bg-surface-raised/30">
       {inner}
     </aside>
   )

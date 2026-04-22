@@ -17,6 +17,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { loadCirclesBootstrap } from '@/lib/circles-data'
+import { parseMadhab } from '@/lib/madhabs'
 import { upsertUserStateAndSnapshot } from '@/lib/supabase/state-sync'
 import {
   clearLocalStateCache,
@@ -205,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     personalRecords: state.personalRecords,
     savingsGoals: state.savingsGoals,
     dhikr: state.dhikr,
+    customDhikr: state.customDhikr,
     settings: state.settings,
   })))
   const authStatus = useSalahStore(state => state.authStatus)
@@ -301,6 +303,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const remoteState = remoteStateRow?.state ?? null
     const normalizedState = normalizeSerializedState(remoteState ?? createDefaultDataState())
+
+    // Signup writes the user's selected madhab into raw_user_meta_data. If there's
+    // no cloud user_state yet (new user, pre-onboarding) AND onboarding isn't complete,
+    // carry that choice into the onboarding draft so they don't have to re-select it.
+    if (!remoteStateRow && !normalizedState.settings.onboardingComplete) {
+      const metadataMadhab = sessionUser.user_metadata?.madhab
+      if (metadataMadhab !== undefined) {
+        normalizedState.settings.madhab = parseMadhab(metadataMadhab, normalizedState.settings.madhab)
+      }
+    }
+
     setProfile(nextProfile)
     setCurrentProfile(nextProfile)
     hydrateFromCloud(normalizedState)

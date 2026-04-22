@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { toDateKey } from '@/lib/date'
 import { useSpeechCapture } from '@/hooks/useSpeechCapture'
 import { useSalahStore } from '@/lib/store'
+import { useFitnessShortcuts } from '@/hooks/useFitnessShortcuts'
+import { onShortcutEvent, dispatchShortcutEvent } from '@/lib/shortcut-events'
+import { Timer as TimerIcon } from 'lucide-react'
 import {
   DashboardPanel,
   DashboardShellGrid,
@@ -163,6 +166,10 @@ function FoodLog() {
 
   useEffect(() => { if (transcript) setDescription(transcript) }, [transcript])
 
+  useEffect(() => {
+    return onShortcutEvent('fitness:open-food', () => setOpen(true))
+  }, [])
+
   function handleSave() {
     if (!description.trim()) return
     addFoodEntry({ description: description.trim(), meal, date: today, time: timeLabel() })
@@ -301,6 +308,12 @@ export default function FitnessPage() {
     if (next) upsertWorkoutSession({ type: next, note: sessionNote })
   }
 
+  useFitnessShortcuts({
+    openExerciseDialog: () => setExerciseOpen(true),
+    openHistoryDialog: () => setHistoryOpen(true),
+    selectType: handleTypeSelect,
+  })
+
   return (
     <div className="px-5 py-5 xl:px-6">
 
@@ -328,9 +341,19 @@ export default function FitnessPage() {
             </span>
           )}
         </div>
-        <button onClick={() => setHistoryOpen(true)} className="btn-secondary px-4 py-2 text-[13px]">
-          History
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => dispatchShortcutEvent('timer:open', { mode: 'interval' as const })}
+            className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-[13px]"
+            aria-label="Open interval timer"
+          >
+            <TimerIcon size={14} aria-hidden />
+            Timer
+          </button>
+          <button onClick={() => setHistoryOpen(true)} className="btn-secondary px-4 py-2 text-[13px]">
+            History
+          </button>
+        </div>
       </div>
 
       <DashboardShellGrid
@@ -366,6 +389,7 @@ export default function FitnessPage() {
 
               {/* Session note */}
               <input
+                id="fitness-session-note"
                 value={sessionNote}
                 onChange={e => setSessionNote(e.target.value)}
                 onBlur={handleSessionSave}

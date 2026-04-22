@@ -28,8 +28,10 @@ import {
 import { useSalahStore } from '@/lib/store'
 import { useLgUp } from '@/hooks/useLgUp'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
+import { useTasksShortcuts } from '@/hooks/useTasksShortcuts'
 import { computePrayerTimesForDates, DEFAULT_PRAYER_COORDS } from '@/lib/prayers'
-import { CalendarDays, ListChecks, PanelLeft } from 'lucide-react'
+import { CalendarDays, CheckCircle2, ChevronDown, ListChecks, PanelLeft } from 'lucide-react'
+import { MenuContent, MenuItem, MenuRoot, MenuSeparator, MenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import type { CalendarTask, PillarKey, PrayerTime } from '@/types'
 
@@ -99,7 +101,7 @@ function TaskPopover({
   style?: React.CSSProperties
 }) {
   const [title, setTitle] = useState(task?.title ?? '')
-  const [date, setDate] = useState(task?.date ?? defaultDate)
+  const [date] = useState(task?.date ?? defaultDate)
   const [startTime, setStartTime] = useState(task?.startTime ?? defaultTime)
   const [duration, setDuration] = useState(task?.duration ?? 30)
   const [pillar, setPillar] = useState<PillarKey>(task?.pillar ?? 'career')
@@ -213,7 +215,7 @@ function MonthView({
   const previewCap = variant === 'task' ? 2 : 3
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+    <div className="flex h-full flex-col">
       <div className="grid grid-cols-7 border-b border-surface-border">
         {dayLabels.map((d) => (
           <div key={d} className="py-2 text-center text-[11px] font-semibold uppercase text-ink-ghost">
@@ -337,6 +339,10 @@ export default function TasksPage() {
   const [view, setView] = useState<ViewMode>('week')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
+  const [desktopRailOpen, setDesktopRailOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('tasks-rail-open') !== 'false'
+  })
   const [weekPrayerTimes, setWeekPrayerTimes] = useState<Record<string, PrayerTime[]>>({})
 
   const computeWeekPrayers = useCallback(
@@ -441,6 +447,12 @@ export default function TasksPage() {
     position: { top: number; left: number }
   } | null>(null)
 
+  function toggleDesktopRail() {
+    const next = !desktopRailOpen
+    setDesktopRailOpen(next)
+    localStorage.setItem('tasks-rail-open', String(next))
+  }
+
   function goToday() {
     setSelectedDate(new Date())
     setMobileRailOpen(false)
@@ -540,6 +552,16 @@ export default function TasksPage() {
     )
   }
 
+  useTasksShortcuts({
+    view,
+    scheduleMode,
+    goToday,
+    navigate,
+    setView,
+    setScheduleMode,
+    addTask: handleAddTask,
+  })
+
   const monthFocusLabel = anchorMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 
   const railProps = {
@@ -563,88 +585,110 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex flex-col px-4 py-4 md:px-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="flex h-[calc(100dvh-73px)] flex-col overflow-hidden px-4 pt-4 sm:h-[calc(100dvh-81px)] md:px-6">
+      <div className="mb-3 flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setMobileRailOpen(true)}
+          className="ui-toolbar-icon lg:hidden"
+          aria-label="Open schedule and calendar"
+        >
+          <PanelLeft className="h-4 w-4" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={toggleDesktopRail}
+          className="ui-toolbar-icon hidden lg:flex"
+          aria-label={desktopRailOpen ? 'Hide panel' : 'Show panel'}
+          title={desktopRailOpen ? 'Hide panel' : 'Show panel'}
+        >
+          <PanelLeft className="h-4 w-4" aria-hidden />
+        </button>
+        <button type="button" onClick={goToday} className="ui-toolbar-btn">
+          Today
+        </button>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => navigate(-1)} className="ui-toolbar-icon">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M8.5 3.5L5 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button type="button" onClick={() => navigate(1)} className="ui-toolbar-icon">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5.5 3.5L9 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+        <span className="text-[14px] font-medium text-ink-primary">{dateLabel}</span>
+
+        <div className="flex-1" />
+
+        {/* Schedule mode: icon toggle pair (like GCal's calendar/check icons) */}
+        <div className="flex items-center rounded-[10px] border border-surface-border bg-surface-card p-0.5 shadow-control">
           <button
             type="button"
-            onClick={() => setMobileRailOpen(true)}
-            className="ui-toolbar-icon lg:hidden"
-            aria-label="Open schedule and calendar"
+            onClick={() => setScheduleMode('time')}
+            title="Time view"
+            aria-label="Time view"
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-[8px] transition-[background-color,color] duration-150',
+              scheduleMode === 'time'
+                ? 'bg-tasks-light text-tasks-text shadow-control'
+                : 'text-ink-muted hover:bg-surface-muted hover:text-ink-secondary',
+            )}
           >
-            <PanelLeft className="h-4 w-4" aria-hidden />
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
           </button>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink-primary">Tasks</h1>
-          <button type="button" onClick={goToday} className="ui-toolbar-btn">
-            Today
+          <button
+            type="button"
+            onClick={() => setScheduleMode('task')}
+            title="Task view"
+            aria-label="Task view"
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-[8px] transition-[background-color,color] duration-150',
+              scheduleMode === 'task'
+                ? 'bg-tasks-light text-tasks-text shadow-control'
+                : 'text-ink-muted hover:bg-surface-muted hover:text-ink-secondary',
+            )}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
           </button>
-          <div className="flex items-center gap-1">
-            <button type="button" onClick={() => navigate(-1)} className="ui-toolbar-icon">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M8.5 3.5L5 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button type="button" onClick={() => navigate(1)} className="ui-toolbar-icon">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5.5 3.5L9 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-          <span className="text-[15px] font-medium text-ink-primary">{dateLabel}</span>
         </div>
 
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div className="ui-segment" role="group" aria-label="Schedule mode">
-            {(['time', 'task'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setScheduleMode(m)}
+        {/* View selector: GCal-style dropdown */}
+        <MenuRoot>
+          <MenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-[10px] border border-surface-border bg-surface-card px-3 py-1.5 text-[13px] font-medium text-ink-secondary shadow-control transition-[box-shadow,background-color] hover:bg-surface-muted hover:shadow-control-hover"
+            >
+              {VIEW_LABEL[view]}
+              <ChevronDown className="h-3.5 w-3.5 text-ink-ghost" aria-hidden />
+            </button>
+          </MenuTrigger>
+          <MenuContent align="end" className="min-w-[160px]">
+            {([
+              { v: 'day',   label: 'Day',   key: '1' },
+              { v: 'week',  label: 'Week',  key: '2' },
+              { v: 'month', label: 'Month', key: '3' },
+            ] as { v: ViewMode; label: string; key: string }[]).map(({ v, label, key }) => (
+              <MenuItem
+                key={v}
+                onSelect={() => setView(v)}
                 className={cn(
-                  'ui-segment-btn min-w-[6.25rem]',
-                  scheduleMode === m
-                    ? 'bg-surface-card text-ink-primary shadow-control'
-                    : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-card/60',
+                  'flex items-center justify-between',
+                  view === v && 'font-medium text-tasks-text',
                 )}
               >
-                {m === 'time' ? (
-                  <>
-                    <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    <span>Time</span>
-                  </>
-                ) : (
-                  <>
-                    <ListChecks className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    <span>Task</span>
-                  </>
-                )}
-              </button>
+                <span>{label}</span>
+                <span className="ml-6 text-[11px] text-ink-ghost">{key}</span>
+              </MenuItem>
             ))}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="ui-segment-surface">
-              {(['day', 'week', 'month'] as ViewMode[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={cn(
-                    'ui-segment-chip',
-                    view === v
-                      ? 'bg-tasks-light text-tasks-text shadow-control'
-                      : 'text-ink-muted hover:text-ink-secondary hover:bg-surface-muted/80',
-                  )}
-                >
-                  {VIEW_LABEL[v]}
-                </button>
-              ))}
-            </div>
-            <button onClick={handleAddTask} className="btn-primary px-3 py-1.5 text-[12px]">
-              + Add task
-            </button>
-          </div>
-        </div>
+          </MenuContent>
+        </MenuRoot>
+        <button onClick={handleAddTask} className="btn-primary px-3 py-1.5 text-[12px]">
+          + Add task
+        </button>
       </div>
 
       {mobileRailOpen ? (
@@ -667,11 +711,14 @@ export default function TasksPage() {
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-0">
-        <div className="hidden shrink-0 lg:block">
+        <div className={cn(
+          'hidden lg:flex overflow-hidden shrink-0 transition-[width] duration-200 ease-in-out',
+          desktopRailOpen ? 'w-[272px]' : 'w-0',
+        )}>
           <TasksLeftRail variant="sidebar" {...railProps} mountMonthFocus={lgUp} />
         </div>
 
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-surface-border bg-surface-card">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-surface-border bg-surface-card pb-4">
         {scheduleMode === 'time' && view === 'day' && (
           <DayCalendarView
             date={selectedDate}

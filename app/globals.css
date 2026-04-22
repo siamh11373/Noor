@@ -201,6 +201,28 @@
   ::-webkit-scrollbar-thumb:hover { background: rgb(var(--scrollbar-thumb-hover)); }
 }
 
+@layer utilities {
+  /* Sidebar scrollbar — invisible by default, appears on hover */
+  .rail-scroll {
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox: hidden by default */
+  }
+  .rail-scroll::-webkit-scrollbar { width: 4px; }
+  .rail-scroll::-webkit-scrollbar-track { background: transparent; }
+  .rail-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    transition: background 150ms ease;
+  }
+  .rail-scroll:hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--brand-300) / 0.4) transparent;
+  }
+  .rail-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgb(var(--brand-300) / 0.4);
+  }
+}
+
 @layer components {
   /*
    * ─── BUTTON SYSTEM SPEC ──────────────────────────────────────────────────────
@@ -435,5 +457,253 @@
   .auth-dark-inputs *::selection {
     background: rgba(184, 144, 74, 0.45);
     color: #fff;
+  }
+
+  /*
+   * ─── NOOR LOADING SCREEN ────────────────────────────────────────────────────
+   * Premium full-viewport load state shown during auth + data hydration.
+   * See components/layout/AppLoadingScreen.tsx for the five UX principles.
+   * All animations honour `prefers-reduced-motion`.
+   */
+  .noor-loading-root {
+    animation: noor-fade-in 380ms ease-out both;
+  }
+
+  .noor-dawn-backdrop {
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(60% 55% at 22% 30%, rgb(var(--brand-100) / 0.9), transparent 60%),
+      radial-gradient(45% 40% at 78% 65%, rgb(var(--faith-border) / 0.55), transparent 70%),
+      radial-gradient(35% 30% at 50% 92%, rgb(var(--brand-200) / 0.5), transparent 70%);
+    filter: blur(24px);
+    animation: noor-dawn-drift 14s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  .dark .noor-dawn-backdrop {
+    background:
+      radial-gradient(60% 55% at 22% 30%, rgb(var(--brand-800) / 0.8), transparent 60%),
+      radial-gradient(45% 40% at 78% 65%, rgb(var(--faith-border) / 0.35), transparent 70%),
+      radial-gradient(35% 30% at 50% 92%, rgb(var(--brand-700) / 0.6), transparent 70%);
+  }
+
+  .noor-skeleton-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .noor-skeleton-nav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 76px;
+    padding: 0 24px;
+    border-bottom: 1px solid rgb(var(--surface-border));
+    background: rgb(var(--surface-bg) / 0.7);
+  }
+  .noor-skeleton-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: rgb(var(--surface-muted));
+  }
+  .noor-skeleton-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 14px;
+    background: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--surface-border));
+  }
+  .noor-skeleton-tab {
+    width: 62px;
+    height: 28px;
+    border-radius: 10px;
+    background: rgb(var(--surface-muted));
+  }
+  .noor-skeleton-avatar {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgb(var(--surface-muted));
+  }
+  .noor-skeleton-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    padding: 28px;
+  }
+  .noor-skeleton-card {
+    border-radius: 18px;
+    background: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--surface-border));
+    min-height: 220px;
+  }
+  @media (max-width: 768px) {
+    .noor-skeleton-body {
+      grid-template-columns: 1fr;
+    }
+    .noor-skeleton-body > :nth-child(n + 2) {
+      display: none;
+    }
+  }
+
+  .noor-glyph-wrap {
+    position: relative;
+    width: 112px;
+    height: 112px;
+    display: grid;
+    place-items: center;
+  }
+  .noor-glyph-halo {
+    position: absolute;
+    inset: -28px;
+    border-radius: 999px;
+    background: radial-gradient(circle at center, rgb(var(--brand-200) / 0.9), transparent 55%);
+    animation: noor-breathe 3.2s ease-in-out infinite;
+    filter: blur(2px);
+  }
+  .dark .noor-glyph-halo {
+    background: radial-gradient(circle at center, rgb(var(--brand-400) / 0.55), transparent 55%);
+  }
+  .noor-glyph-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--brand-300) / 0.55);
+    animation: noor-ring-pulse 3.2s ease-in-out infinite;
+  }
+
+  .noor-motes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .noor-mote {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    left: calc((var(--mote-i) * 7.3%) - 3%);
+    top: calc((var(--mote-i) * 11%) + 4%);
+    border-radius: 999px;
+    background: rgb(var(--brand-300) / 0.55);
+    filter: blur(0.5px);
+    animation: noor-mote-float 9s ease-in-out infinite;
+    animation-delay: calc(var(--mote-i) * -0.6s);
+    opacity: 0;
+  }
+  .dark .noor-mote {
+    background: rgb(var(--brand-200) / 0.35);
+  }
+
+  .noor-status-line {
+    animation: noor-status-in 380ms ease-out both;
+  }
+
+  .noor-progress-track {
+    position: relative;
+    width: 100%;
+    height: 3px;
+    border-radius: 999px;
+    background: rgb(var(--surface-border) / 0.7);
+    overflow: hidden;
+  }
+  .noor-progress-bar {
+    position: absolute;
+    left: -40%;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(var(--brand-400)) 50%,
+      transparent 100%
+    );
+    animation: noor-progress-sweep 1.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+    box-shadow: 0 0 12px rgb(var(--brand-400) / 0.5);
+  }
+
+  @keyframes noor-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes noor-breathe {
+    0%, 100% { transform: scale(1);    opacity: 0.75; }
+    50%      { transform: scale(1.08); opacity: 1;    }
+  }
+  @keyframes noor-ring-pulse {
+    0%, 100% { transform: scale(1);    opacity: 0.5; }
+    50%      { transform: scale(1.06); opacity: 0.9; }
+  }
+  @keyframes noor-progress-sweep {
+    0%   { left: -40%; }
+    100% { left: 100%; }
+  }
+  @keyframes noor-status-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+  @keyframes noor-dawn-drift {
+    from { transform: translate3d(-2%, -1%, 0) scale(1);    }
+    to   { transform: translate3d( 2%,  2%, 0) scale(1.05); }
+  }
+  @keyframes noor-mote-float {
+    0%   { transform: translate3d(0, 10px, 0);     opacity: 0;   }
+    15%  { opacity: 0.8; }
+    85%  { opacity: 0.8; }
+    100% { transform: translate3d(-20px, -60px, 0); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .noor-loading-root,
+    .noor-dawn-backdrop,
+    .noor-glyph-halo,
+    .noor-glyph-ring,
+    .noor-progress-bar,
+    .noor-status-line,
+    .noor-mote {
+      animation: noor-fade-in 300ms ease-out both !important;
+    }
+    .noor-glyph-halo { opacity: 0.7; }
+    .noor-glyph-ring { opacity: 0.6; }
+  }
+
+  /*
+   * ─── NOOR TIMER ───────────────────────────────────────────────────────────
+   */
+  .noor-timer-halo {
+    animation: noor-breathe 3.2s ease-in-out infinite;
+    filter: blur(6px);
+  }
+  .noor-timer-pulse {
+    animation: noor-timer-pulse 1.2s ease-in-out infinite;
+  }
+  .noor-timer-dot {
+    animation: noor-timer-dot 1.6s ease-in-out infinite;
+  }
+  @keyframes noor-timer-pulse {
+    0%, 100% { transform: scale(1);    opacity: 1;   }
+    50%      { transform: scale(1.04); opacity: 0.9; }
+  }
+  @keyframes noor-timer-dot {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1;   }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .noor-timer-halo,
+    .noor-timer-pulse,
+    .noor-timer-dot {
+      animation: none !important;
+    }
+    .noor-timer-progress {
+      transition: none !important;
+    }
   }
 }

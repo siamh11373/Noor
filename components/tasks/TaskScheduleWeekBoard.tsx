@@ -292,7 +292,7 @@ export function TaskScheduleWeekBoard({
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+      <div className="flex h-full flex-col">
         <p className="shrink-0 border-b border-surface-border px-3 py-2 text-[12px] text-ink-ghost sm:px-4">
           One column per day — drag tasks between days to reschedule.
         </p>

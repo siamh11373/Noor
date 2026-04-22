@@ -4,12 +4,17 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { DashboardPanel, PageHero } from '@/components/ui'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { useSalahStore } from '@/lib/store'
+import { MADHAB_OPTIONS, MADHAB_META } from '@/lib/madhabs'
+import type { Madhab } from '@/types'
 
 // SECURITY FIX: enforce a maximum display name length to prevent oversized data in the database
 const DISPLAY_NAME_MAX_LENGTH = 100
 
 export default function AccountPage() {
   const { client, profile, user, refreshProfile } = useAuth()
+  const madhab = useSalahStore(state => state.settings.madhab)
+  const updateSettings = useSalahStore(state => state.updateSettings)
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -106,6 +111,39 @@ export default function AccountPage() {
             </Link>
           </div>
         </form>
+      </DashboardPanel>
+
+      <DashboardPanel
+        title="Prayer calculation"
+        description="Your madhab sets the Asr timing. Fajr, Dhuhr, Maghrib, and Isha are identical across all four."
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">
+              Madhab
+            </label>
+            <select
+              value={madhab}
+              onChange={event => updateSettings({ madhab: event.target.value as Madhab })}
+              className="input-base max-w-xs"
+            >
+              {MADHAB_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[12px] leading-snug text-ink-ghost">
+              {MADHAB_META[madhab].description}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-surface-border bg-surface-raised/60 px-4 py-3 text-[12px] leading-6 text-ink-secondary">
+            <p className="font-medium text-ink-primary">How Asr is computed</p>
+            <p className="mt-1">
+              Hanafi uses shadow × 2 (later afternoon). Shafi&rsquo;i, Maliki, and Hanbali share shadow × 1 (earlier
+              afternoon). Changes save automatically and sync to your other devices.
+            </p>
+          </div>
+        </div>
       </DashboardPanel>
     </main>
   )

@@ -106,8 +106,7 @@ export function TaskScheduleDayList({
     >
       <div
         data-task-day-grid
-        className="flex flex-col overflow-y-auto px-4 py-5 sm:px-6"
-        style={{ minHeight: 'calc(100vh - 180px)', maxHeight: 'calc(100vh - 180px)' }}
+        className="flex h-full flex-col overflow-y-auto px-4 py-5 sm:px-6"
       >
         <p className="mb-4 max-w-md text-[13px] leading-relaxed text-ink-ghost">
           Everything for this day in one list. Drag to set priority — open a task when you need times or details.

@@ -7,6 +7,8 @@ import { AuthShell } from '@/components/auth/AuthShell'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { getSiteUrl } from '@/lib/supabase/env'
 import { useSalahStore } from '@/lib/store'
+import { MADHAB_OPTIONS, MADHAB_META } from '@/lib/madhabs'
+import type { Madhab } from '@/types'
 import { cn, isSafeRedirect } from '@/lib/utils'
 
 function messageForKey(key: string | null) {
@@ -31,6 +33,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [madhab, setMadhab] = useState<Madhab>('hanafi')
   const [submitting, setSubmitting] = useState(false)
   const [info, setInfo] = useState('')
   const [error, setError] = useState('')
@@ -118,6 +121,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         data: {
           display_name: displayName.trim(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+          madhab,
         },
       },
     })
@@ -170,18 +174,38 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         {mode === 'signup' && (
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">
-              Display name
-            </label>
-            <input
-              value={displayName}
-              onChange={event => setDisplayName(event.target.value)}
-              className="input-base"
-              placeholder="How should we address you?"
-              required
-            />
-          </div>
+          <>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">
+                Display name
+              </label>
+              <input
+                value={displayName}
+                onChange={event => setDisplayName(event.target.value)}
+                className="input-base"
+                placeholder="How should we address you?"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-ghost">
+                Madhab
+              </label>
+              <select
+                value={madhab}
+                onChange={event => setMadhab(event.target.value as Madhab)}
+                className="input-base"
+              >
+                {MADHAB_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] leading-snug text-white/40">
+                {MADHAB_META[madhab].description} You can change this later in Account settings.
+              </p>
+            </div>
+          </>
         )}
 
         <div>
@@ -232,7 +256,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         </div>
 
         <div className="rounded-2xl border border-surface-border bg-surface-raised px-4 py-3 text-[13px] leading-6 text-ink-secondary">
-          Your account is for one private prayer-centered dashboard. Setup for madhab, location, notifications,
+          Your account is for one private prayer-centered dashboard. Setup for location, notifications,
           weekly split, and optional accountability happens after signup.
         </div>
 

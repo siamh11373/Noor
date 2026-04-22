@@ -57,13 +57,17 @@ export function WeekCalendarView({
 
   useEffect(() => {
     if (scrollRef.current) {
-      const scrollTo = Math.max(0, (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT)
+      const DEFAULT_START_HOUR = 7
+      const timeBasedScroll = (currentMinutes / 60 - START_HOUR - 2) * HOUR_HEIGHT
+      const scrollTo = Math.max((DEFAULT_START_HOUR - START_HOUR) * HOUR_HEIGHT, timeBasedScroll)
       scrollRef.current.scrollTop = scrollTo
     }
   }, [currentMinutes])
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+    <div
+      className="flex h-full flex-col"
+    >
       <div className="flex border-b border-surface-border">
         <div className="w-14 shrink-0" />
         {weekDates.map((d, i) => {
@@ -71,26 +75,31 @@ export function WeekCalendarView({
           return (
             <div
               key={i}
-              className="min-w-0 flex-1 cursor-pointer py-2 text-center transition-colors hover:bg-surface-muted"
+              className="min-w-0 flex-1 cursor-pointer py-2.5 text-center transition-colors hover:bg-surface-muted"
               onClick={() => onOpenDay(d)}
             >
-              <p className={cn('text-[10px] uppercase', dayIsToday ? 'font-semibold text-brand-400' : 'text-ink-ghost')}>
+              <p className={cn('text-[11px] font-medium uppercase tracking-wide', dayIsToday ? 'text-brand-400' : 'text-ink-ghost')}>
                 {dayNames[i]}
               </p>
-              <p
-                className={cn(
-                  'mt-0.5 text-[18px] font-semibold',
-                  dayIsToday ? 'text-brand-400' : 'text-ink-primary',
-                )}
-              >
-                {d.getDate()}
-              </p>
+              <div className="mt-1 flex justify-center">
+                <span
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-full text-[22px] font-semibold',
+                    dayIsToday ? 'bg-brand-400 text-white' : 'text-ink-primary',
+                  )}
+                >
+                  {d.getDate()}
+                </span>
+              </div>
             </div>
           )
         })}
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent_0,black_16px,black_calc(100%-24px),transparent_100%)]"
+      >
         <div data-week-timeline-row className="relative flex" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
           <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (

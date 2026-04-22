@@ -1,4 +1,5 @@
 import type { PrayerTime, PrayerName, Madhab, CalcMethod } from '@/types'
+import { asrShadowFactorFor } from '@/lib/madhabs'
 
 /** Warren, MI — matches usePrayerTimes when geolocation is unavailable or denied. */
 export const DEFAULT_PRAYER_COORDS = { lat: 42.5145, lng: -83.0146 } as const
@@ -57,7 +58,10 @@ export async function computePrayerTimes(
   } satisfies Record<CalcMethod, () => ReturnType<typeof adhan.CalculationMethod.NorthAmerica>>
 
   const params = (methodMap[calcMethod] ?? adhan.CalculationMethod.NorthAmerica)()
-  params.madhab = madhab === 'hanafi' ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi
+  // All 4 madhabs collapse to 2 distinct Asr calculations: Hanafi (shadow×2)
+  // or the jumhur majority (Shafi'i/Maliki/Hanbali, shadow×1). This is fiqh-correct
+  // and matches every mainstream Islamic prayer-time library.
+  params.madhab = asrShadowFactorFor(madhab) === 2 ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi
 
   const times = new adhan.PrayerTimes(coords, date, params)
 

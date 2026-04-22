@@ -23,6 +23,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { Badge } from '@/components/ui'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { useCirclesShortcuts } from '@/hooks/useCirclesShortcuts'
 
 function rhythmTier(score: number | null, hasData: boolean): { label: string; barClass: string } {
   if (!hasData || score == null) return { label: 'Syncing', barClass: 'bg-surface-muted' }
@@ -111,6 +112,18 @@ export default function CirclesPage() {
 
   const activeCircle = circles.find((c) => c.id === activeCircleId) ?? null
   const pendingForActiveCircle = pendingCircleInvites.filter((i) => i.circle_id === activeCircleId).length
+
+  useCirclesShortcuts({
+    openNewCircle: () => setCreateOpen(true),
+    openJoinWithCode: () => setPairingJoinOpen(true),
+    openPairingInvite: () => setPairingInviteOpen(true),
+    shiftActiveCircle: (dir) => {
+      if (circles.length < 2) return
+      const currentIndex = circles.findIndex((c) => c.id === activeCircleId)
+      const nextIndex = ((currentIndex === -1 ? 0 : currentIndex) + dir + circles.length) % circles.length
+      setActiveCircleId(circles[nextIndex]?.id ?? null)
+    },
+  })
 
   const myName = profile?.display_name?.trim() || user?.email?.split('@')[0] || 'You'
   const leaderboardEntries: CircleLeaderboardEntry[] = useMemo(
