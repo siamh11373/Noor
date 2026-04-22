@@ -67,8 +67,8 @@ export function OnboardingFlow() {
 
   // Pre-fill display name from Google metadata for OAuth users
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const googleName = (user as any)?.user_metadata?.full_name as string | undefined
+    const meta = (user as { user_metadata?: { full_name?: string } } | null)?.user_metadata
+    const googleName = meta?.full_name
     if (googleName && !onboardingDraft.displayName.trim()) {
       patchOnboardingDraft({ displayName: googleName.split(' ')[0] ?? googleName })
     }
@@ -207,10 +207,9 @@ export function OnboardingFlow() {
     router.push('/faith')
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isGoogleUser = (user as any)?.app_metadata?.provider === 'google'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const googleFirstName = ((user as any)?.user_metadata?.full_name as string | undefined)?.split(' ')[0]
+  const userMeta = user as { app_metadata?: { provider?: string }; user_metadata?: { full_name?: string } } | null
+  const isGoogleUser = userMeta?.app_metadata?.provider === 'google'
+  const googleFirstName = userMeta?.user_metadata?.full_name?.split(' ')[0]
 
   return (
     <AuthShell
