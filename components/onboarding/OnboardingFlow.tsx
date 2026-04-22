@@ -65,6 +65,16 @@ export function OnboardingFlow() {
     seedOnboardingDraft({ profile: currentProfile, settings })
   }, [currentProfile, seedOnboardingDraft, settings])
 
+  // Pre-fill display name from Google metadata for OAuth users
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const googleName = (user as any)?.user_metadata?.full_name as string | undefined
+    if (googleName && !onboardingDraft.displayName.trim()) {
+      patchOnboardingDraft({ displayName: googleName.split(' ')[0] ?? googleName })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
   const totalSteps = STEP_TITLES.length
   const currentStep = Math.min(Math.max(onboardingStep, 0), totalSteps - 1)
 
@@ -197,11 +207,20 @@ export function OnboardingFlow() {
     router.push('/faith')
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isGoogleUser = (user as any)?.app_metadata?.provider === 'google'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const googleFirstName = ((user as any)?.user_metadata?.full_name as string | undefined)?.split(' ')[0]
+
   return (
     <AuthShell
-      eyebrow="Onboarding"
-      title="Complete your Noor setup"
-      description="Set the prayer and weekly defaults that shape your dashboard experience. The product unlocks as soon as setup is complete."
+      eyebrow={isGoogleUser ? 'Welcome to Noor' : 'Onboarding'}
+      title={isGoogleUser && googleFirstName ? `Hi, ${googleFirstName}! One quick setup.` : 'Complete your Noor setup'}
+      description={
+        isGoogleUser
+          ? "We grabbed your name from Google — just fill in your prayer preferences and you're ready."
+          : "Set the prayer and weekly defaults that shape your dashboard experience. The product unlocks as soon as setup is complete."
+      }
     >
       <div className="space-y-6">
         <div className="rounded-2xl border border-surface-border bg-surface-raised px-4 py-4">
