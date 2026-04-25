@@ -1,4 +1,5 @@
 import type { PillarScores, SerializedSalahState } from '@/types'
+import type { Theme } from '@/lib/theme'
 
 export type Json =
   | string
@@ -16,6 +17,7 @@ export interface Database {
           id: string
           display_name: string | null
           timezone: string | null
+          theme_preference: Theme | null
           created_at: string
           updated_at: string
         }
@@ -23,12 +25,14 @@ export interface Database {
           id: string
           display_name?: string | null
           timezone?: string | null
+          theme_preference?: Theme | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           display_name?: string | null
           timezone?: string | null
+          theme_preference?: Theme | null
           updated_at?: string
         }
         Relationships: []

@@ -7,6 +7,7 @@ import { BookOpenText } from 'lucide-react'
 import { toDateKey } from '@/lib/date'
 import { useSalahStore, mondayStr } from '@/lib/store'
 import { usePrayerTimes } from '@/hooks/usePrayerTimes'
+import { useCompletionSound } from '@/hooks/useCompletionSound'
 import { useWeeklyScore, useScoreHistory, useScoreHistoryWithKeys } from '@/hooks/useWeeklyScore'
 import { getWeekDateStrings, scoreLabel, calculateWeeklyScoreForWeek } from '@/lib/score'
 import { PRAYER_ORDER } from '@/lib/prayers'
@@ -107,6 +108,24 @@ function PrayerButtons() {
   const { getDailyLog, togglePrayer } = useSalahStore()
   const { prayerTimes, nextPrayer } = usePrayerTimes()
   const log = getDailyLog()
+  const playSound = useCompletionSound()
+  const [animatingPrayers, setAnimatingPrayers] = useState<Set<string>>(new Set())
+
+  function handleToggle(name: typeof PRAYER_ORDER[number]) {
+    const alreadyPrayed = log.prayers[name]
+    if (!alreadyPrayed) {
+      playSound()
+      setAnimatingPrayers((prev) => new Set(prev).add(name))
+      setTimeout(() => {
+        setAnimatingPrayers((prev) => {
+          const next = new Set(prev)
+          next.delete(name)
+          return next
+        })
+      }, 620)
+    }
+    togglePrayer(name)
+  }
 
   return (
     <div className="grid grid-cols-5 gap-2.5">
@@ -114,11 +133,13 @@ function PrayerButtons() {
         const pt = prayerTimes.find((p) => p.name === name)
         const prayed = log.prayers[name]
         const isNext = nextPrayer?.name === name
+        const isAnimating = animatingPrayers.has(name)
 
         return (
           <button
             key={name}
-            onClick={() => togglePrayer(name)}
+            onClick={() => handleToggle(name)}
+            style={{ overflow: 'visible' }}
             className={cn(
               'relative flex flex-col items-center py-3.5 px-2 rounded-xl border-[1.5px] transition-all active:scale-[.97]',
               prayed
@@ -126,8 +147,17 @@ function PrayerButtons() {
                 : isNext
                   ? 'bg-brand-50 border-brand-300'
                   : 'bg-surface-card border-surface-border hover:border-ink-ghost',
+              isAnimating && 'noor-completing',
             )}
           >
+            {/* Ripple ring expanding from button edges */}
+            {isAnimating && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-xl noor-check-ripple"
+                style={{ border: '1.5px solid rgb(var(--faith-border))', transformOrigin: 'center' }}
+              />
+            )}
             {isNext && !prayed && (
               <span className="absolute -top-px left-1/2 -translate-x-1/2 bg-brand-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-b-md tracking-wide whitespace-nowrap">
                 NEXT {pt ? `· ${pt.formattedTime}` : ''}
@@ -145,7 +175,16 @@ function PrayerButtons() {
             >
               {prayed && (
                 <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
-                  <path d="M2 6.5l2.5 2.5 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M2 6.5l2.5 2.5 5-5"
+                    stroke="white"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    pathLength={12}
+                    strokeDasharray={12}
+                    className={isAnimating ? 'noor-check-draw' : undefined}
+                  />
                 </svg>
               )}
             </div>

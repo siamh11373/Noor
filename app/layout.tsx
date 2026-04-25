@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Fraunces, Manrope } from 'next/font/google'
 import { AuthProvider } from '@/components/providers/AuthProvider'
-import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getThemeBootstrapScript, getThemeColorScheme, resolveTheme, type Theme } from '@/lib/theme'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -24,15 +25,47 @@ export const metadata: Metadata = {
   // Next emits proper link tags; metadata-only /logo-white.png often shows the generic globe.
 }
 
-export default function RootLayout({
+async function getInitialThemePreference(): Promise<Theme | null> {
+  const client = await createSupabaseServerClient()
+
+  if (!client) {
+    return null
+  }
+
+  const {
+    data: { user },
+  } = await client.auth.getUser()
+
+  if (!user?.email_confirmed_at) {
+    return null
+  }
+
+  const { data: profile } = await client
+    .from('profiles')
+    .select('theme_preference')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return resolveTheme(profile?.theme_preference)
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const initialTheme = await getInitialThemePreference()
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme={initialTheme ?? undefined}
+      className={initialTheme === 'dark' ? 'dark' : undefined}
+      style={initialTheme ? { colorScheme: getThemeColorScheme(initialTheme) } : undefined}
+      suppressHydrationWarning
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript(initialTheme) }} />
       </head>
       <body className={`${fraunces.variable} ${manrope.variable} bg-surface-bg text-ink-primary`}>
         <AuthProvider>{children}</AuthProvider>

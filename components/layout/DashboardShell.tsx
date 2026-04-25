@@ -1,6 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { TopNav } from '@/components/layout/TopNav'
 import { AppLoadingScreen } from '@/components/layout/AppLoadingScreen'
 import { useSalahStore } from '@/lib/store'
@@ -19,6 +21,95 @@ function ShellShortcuts({ ready }: { ready: boolean }) {
   useFirstVisitHint(ready)
   useTimerEngine()
   return null
+}
+
+function RouteTransition({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const segment = pathname?.split('/')[1] ?? 'root'
+  return (
+    <div key={segment} className="route-transition">
+      {children}
+    </div>
+  )
+}
+
+function HyacinthOverlay() {
+  return (
+    <div aria-hidden className="theme-hyacinth-overlay">
+      <Image
+        src="/florals/pink-hyacinth.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={2667}
+        className="theme-hyacinth-wing theme-hyacinth-wing-left"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-hyacinth.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={2667}
+        className="theme-hyacinth-wing theme-hyacinth-wing-right"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-hyacinth-tall.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={1588}
+        className="theme-hyacinth-wing theme-hyacinth-wing-bottom-left"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-hyacinth.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={2667}
+        className="theme-hyacinth-wing theme-hyacinth-wing-bottom-right"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-lily.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={1588}
+        className="theme-hyacinth-wing theme-lily-top-right"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-hyacinth-tall.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={1588}
+        className="theme-hyacinth-wing theme-hyacinth-top-left"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-lily.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={1588}
+        className="theme-hyacinth-wing theme-lily-bottom-right"
+        priority={false}
+      />
+      <Image
+        src="/florals/pink-lily-2.png"
+        alt=""
+        aria-hidden
+        width={1588}
+        height={1588}
+        className="theme-hyacinth-wing theme-lily-top-center"
+        priority={false}
+      />
+    </div>
+  )
 }
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -56,13 +147,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-surface-bg">
-      <TopNav />
-      {children}
-      <ShellShortcuts ready={shellReady} />
-      <ShortcutsHelpDialog />
-      <TimerDialog />
-      <ToastHost />
+    <div className="theme-shell-canvas min-h-screen bg-surface-bg">
+      <HyacinthOverlay />
+      <div className="relative z-10">
+        <TopNav />
+        <RouteTransition>{children}</RouteTransition>
+        <ShellShortcuts ready={shellReady} />
+        <ShortcutsHelpDialog />
+        <TimerDialog />
+        <ToastHost />
+      </div>
     </div>
   )
 }

@@ -49,7 +49,7 @@ export function TopNav() {
     : 'Cloud idle'
 
   return (
-    <header className="sticky top-0 z-30 border-b border-surface-border bg-surface-bg/92 backdrop-blur">
+    <header className="theme-topnav-header sticky top-0 z-30 border-b border-surface-border bg-surface-bg/92 backdrop-blur">
       <div className="relative flex h-[72px] items-center justify-between px-5 sm:h-[80px] sm:px-6">
         {/* Left: logo only */}
         <Link href="/faith" className="flex shrink-0 items-center gap-3">
@@ -67,7 +67,7 @@ export function TopNav() {
         </Link>
 
         {/* Center: absolutely positioned nav pill */}
-        <nav className="absolute left-1/2 -translate-x-1/2 flex gap-1 rounded-2xl border border-surface-border bg-surface-card p-1.5 shadow-card transition-shadow duration-300 ease-out">
+        <nav className="theme-topnav-navpill absolute left-1/2 -translate-x-1/2 flex gap-1 rounded-2xl border border-surface-border bg-surface-card p-1.5 shadow-card transition-shadow duration-300 ease-out">
           {NAV_ITEMS.map(item => {
             const active = pathname.startsWith(item.href)
             return (

@@ -1,3 +1,5 @@
+import type { Theme } from '@/lib/theme'
+
 // ─── PRAYERS ─────────────────────────────────────────────────────────────────
 
 export type PrayerName = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
@@ -204,6 +206,7 @@ export interface Profile {
   id: string
   display_name: string | null
   timezone: string | null
+  theme_preference: Theme | null
   created_at: string
   updated_at: string
 }

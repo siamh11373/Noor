@@ -13,6 +13,7 @@ import {
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
 import { useShallow } from 'zustand/react/shallow'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import type { Theme } from '@/lib/theme'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
@@ -50,6 +51,7 @@ interface AuthContextValue {
   isConfigured: boolean
   isReady: boolean
   signOut: () => Promise<void>
+  setThemePreference: (theme: Theme) => Promise<void>
   refreshProfile: () => Promise<void>
   refreshAccountability: () => Promise<void>
   refreshCircles: () => Promise<void>
@@ -256,6 +258,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(nextProfile)
     setCurrentProfile(nextProfile)
   }, [client, session?.user, setCurrentProfile])
+
+  const setThemePreference = useCallback(async (theme: Theme) => {
+    if (!client || !session?.user?.email_confirmed_at) {
+      return
+    }
+
+    const optimisticProfile = profile
+      ? { ...profile, theme_preference: theme }
+      : profile
+
+    if (optimisticProfile) {
+      setProfile(optimisticProfile)
+      setCurrentProfile(optimisticProfile)
+    }
+
+    const { data } = await client
+      .from('profiles')
+      .update({ theme_preference: theme })
+      .eq('id', session.user.id)
+      .select('*')
+      .maybeSingle()
+
+    if (data) {
+      setProfile(data)
+      setCurrentProfile(data)
+    }
+  }, [client, profile, session?.user, setCurrentProfile])
 
   const bootstrapSession = useCallback(async (nextSession: Session | null) => {
     const runId = ++bootIdRef.current
@@ -501,10 +530,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isConfigured,
     isReady,
     signOut,
+    setThemePreference,
     refreshProfile,
     refreshAccountability,
     refreshCircles,
-  }), [client, isConfigured, isReady, profile, refreshAccountability, refreshCircles, refreshProfile, session, signOut, user])
+  }), [client, isConfigured, isReady, profile, refreshAccountability, refreshCircles, refreshProfile, session, setThemePreference, signOut, user])
 
   return (
     <AuthContext.Provider value={value}>

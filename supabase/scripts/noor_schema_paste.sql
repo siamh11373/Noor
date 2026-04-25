@@ -28,6 +28,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
   timezone text,
+  theme_preference text check (theme_preference is null or theme_preference in ('light', 'dark', 'pink')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );

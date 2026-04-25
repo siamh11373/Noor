@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { TASK_PILLAR_STYLES } from '@/lib/tasks-calendar'
 import { cn } from '@/lib/utils'
+import { CompletionCheckbox } from '@/components/ui/CompletionCheckbox'
 import type { CalendarTask } from '@/types'
 
 export function TaskPlannerSortableRow({
@@ -70,41 +71,18 @@ export function TaskPlannerSortableRow({
           </button>
         )}
         <button type="button" onClick={onOpen} className="min-h-0 min-w-0 flex-1 rounded-lg py-0.5 text-left hover:bg-surface-muted/50">
-          <div className="flex items-center gap-2">
-            <span
-              role="checkbox"
-              aria-checked={task.completed}
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggle()
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  onToggle()
-                }
-              }}
-              className={cn(
-                'flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border-[1.5px]',
-                task.completed ? 'border-faith bg-faith' : 'border-current opacity-40',
-              )}
-            >
-              {task.completed && (
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path
-                    d="M1.5 4l1.5 1.5 3-3"
-                    stroke="white"
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
+          <div className="flex items-start gap-2">
+            <CompletionCheckbox
+              checked={task.completed}
+              onChange={onToggle}
+              size="sm"
+              colorClass="border-faith bg-faith"
+              aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
+              className="mt-0.5 rounded"
+            />
             <span
               className={cn(
-                'truncate font-medium text-ink-primary',
+                'break-words font-medium text-ink-primary',
                 compact ? 'text-[11px]' : 'text-[13px]',
                 task.completed && 'line-through opacity-60',
               )}

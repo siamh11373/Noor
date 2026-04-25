@@ -241,12 +241,7 @@ export default function CirclesPage() {
         : ordered
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] overflow-hidden px-4 pb-10 pt-6 sm:px-6">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[min(42vh,320px)] bg-gradient-to-b from-brand-50/90 via-surface-bg to-surface-bg dark:from-brand-950/40 dark:via-surface-bg dark:to-surface-bg"
-        aria-hidden
-      />
-
+    <div className="relative min-h-[calc(100vh-5rem)] px-4 pb-10 pt-6 sm:px-6">
       <div className="relative mx-auto max-w-4xl">
         <header className="mb-6 text-center">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-200/80 bg-brand-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-600 dark:border-brand-800 dark:bg-brand-950/50 dark:text-brand-300">

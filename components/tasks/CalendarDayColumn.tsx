@@ -23,6 +23,7 @@ import {
 import { hasActiveRecurrence } from '@/lib/task-recurrence'
 import { buildPrayerTimelineGradientImage } from '@/lib/prayer-sections'
 import { cn } from '@/lib/utils'
+import { CompletionCheckbox } from '@/components/ui/CompletionCheckbox'
 import type { CalendarTask, PrayerTime } from '@/types'
 
 const DRAG_THRESHOLD_PX = 6
@@ -601,31 +602,15 @@ export function CalendarDayColumn({
               onPointerDown={(e) => onTaskBodyPointerDown(e, task)}
             >
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
+                <CompletionCheckbox
+                  checked={disp.completed}
+                  onChange={() => toggleCalendarTask(task.id)}
+                  size={isWeek ? 'xs' : 'sm'}
+                  colorClass="border-faith bg-faith"
+                  aria-label={disp.completed ? 'Mark incomplete' : 'Mark complete'}
+                  className="rounded"
                   onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleCalendarTask(task.id)
-                  }}
-                  className={cn(
-                    'flex shrink-0 cursor-pointer items-center justify-center rounded border-[1.5px]',
-                    isWeek ? 'h-3.5 w-3.5' : 'h-4 w-4',
-                    disp.completed ? 'border-faith bg-faith' : 'border-current opacity-40',
-                  )}
-                >
-                  {disp.completed && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                      <path
-                        d="M1.5 4l1.5 1.5 3-3"
-                        stroke="white"
-                        strokeWidth="1.3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
+                />
                 <span
                   className={cn(
                     'truncate font-medium',

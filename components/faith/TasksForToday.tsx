@@ -9,6 +9,7 @@ import { nextStartForAppend } from '@/lib/task-schedule-order'
 import { formatTimeDisplay, timeToMinutes } from '@/lib/tasks-calendar'
 import { useSalahStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { CompletionCheckbox } from '@/components/ui/CompletionCheckbox'
 import type { CalendarTask } from '@/types'
 
 function pillarCaption(pillar: CalendarTask['pillar']) {
@@ -149,29 +150,14 @@ export function TasksForToday({ className }: { className?: string }) {
                     compact ? 'px-3 py-2' : 'px-3.5 py-2.5',
                   )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleCalendarTask(task.id)}
-                    className={cn(
-                      'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all',
-                      task.completed
-                        ? 'border-faith bg-faith'
-                        : 'border-surface-border hover:border-ink-ghost',
-                    )}
+                  <CompletionCheckbox
+                    checked={task.completed}
+                    onChange={() => toggleCalendarTask(task.id)}
+                    size="md"
+                    colorClass="border-faith bg-faith"
                     aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
-                  >
-                    {task.completed && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
-                        <path
-                          d="M2 5l2 2 4-4"
-                          stroke="white"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </button>
+                    className="mt-0.5"
+                  />
 
                   <Link
                     href="/tasks"
