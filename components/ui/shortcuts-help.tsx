@@ -87,7 +87,9 @@ export function ShortcutsHelpDialog() {
           <DialogHeader className="mb-2">
             <DialogTitle>Keyboard shortcuts</DialogTitle>
             <DialogDescription>
-              Press <Kbd keys={['Esc']} className="align-middle" /> to close. Shortcuts are
+              Press <Kbd keys={['Esc']} className="align-middle" /> to close.{' '}
+              <Kbd keys={['alt', '1']} className="align-middle" />–
+              <Kbd keys={['alt', '5']} className="align-middle" /> jump between main pages. Shortcuts are
               disabled while typing in text fields.
             </DialogDescription>
           </DialogHeader>

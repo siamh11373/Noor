@@ -51,11 +51,11 @@ export const GROUP_ORDER: ShortcutGroup[] = [
 ]
 
 export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
-  { id: 'nav-faith',   keys: ['g', 'f'], label: 'Go to Faith',   group: 'navigation' },
-  { id: 'nav-tasks',   keys: ['g', 't'], label: 'Go to Tasks',   group: 'navigation' },
-  { id: 'nav-fitness', keys: ['g', 'i'], label: 'Go to Fitness', group: 'navigation' },
-  { id: 'nav-circles', keys: ['g', 'c'], label: 'Go to Circles', group: 'navigation' },
-  { id: 'nav-account', keys: ['g', 'a'], label: 'Go to Account', group: 'navigation' },
+  { id: 'nav-faith',   keys: ['alt', '1'], label: 'Go to Faith',   group: 'navigation' },
+  { id: 'nav-tasks',   keys: ['alt', '2'], label: 'Go to Tasks',   group: 'navigation' },
+  { id: 'nav-fitness', keys: ['alt', '3'], label: 'Go to Fitness', group: 'navigation' },
+  { id: 'nav-circles', keys: ['alt', '4'], label: 'Go to Circles', group: 'navigation' },
+  { id: 'nav-account', keys: ['alt', '5'], label: 'Go to Account', group: 'navigation' },
   { id: 'timer-open', keys: ['.'], label: 'Open timer', group: 'navigation' },
   { id: 'edit-undo', keys: ['mod', 'z'],          label: 'Undo last change', group: 'editing' },
   { id: 'edit-redo', keys: ['mod', 'shift', 'z'], label: 'Redo',             group: 'editing' },

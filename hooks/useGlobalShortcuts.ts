@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useKeySequence } from '@/hooks/useKeySequence'
+import { useShortcut } from '@/hooks/useShortcuts'
 import { useShortcutsUi } from '@/lib/shortcuts'
 import { dispatchShortcutEvent } from '@/lib/shortcut-events'
 
@@ -15,26 +15,21 @@ function isEditable(target: EventTarget | null): boolean {
 }
 
 /**
- * Global shortcuts: vim-style `g`-leader navigation plus `?` help toggle
- * and `Escape` to close the help overlay.
+ * Global shortcuts: `Alt/Option`+`1`–`5` jump to main areas (top nav order),
+ * plus `?` help toggle and `Escape` to close the help overlay.
  *
- * We handle `?` with a raw keydown listener matching `event.key === '?'`
- * because `shift+/` parsing differs across keyboard layouts and some OSes.
+ * `?` uses a raw keydown listener because `shift+/` parsing differs by layout.
  */
 export function useGlobalShortcuts() {
   const router = useRouter()
   const toggleHelp = useShortcutsUi((s) => s.toggleHelp)
   const setHelpOpen = useShortcutsUi((s) => s.setHelpOpen)
 
-  useKeySequence({
-    g: {
-      f: () => router.push('/faith'),
-      t: () => router.push('/tasks'),
-      i: () => router.push('/fitness'),
-      c: () => router.push('/circles'),
-      a: () => router.push('/account'),
-    },
-  })
+  useShortcut('alt+1', () => { router.push('/faith') }, { preventDefault: true }, [router])
+  useShortcut('alt+2', () => { router.push('/tasks') }, { preventDefault: true }, [router])
+  useShortcut('alt+3', () => { router.push('/fitness') }, { preventDefault: true }, [router])
+  useShortcut('alt+4', () => { router.push('/circles') }, { preventDefault: true }, [router])
+  useShortcut('alt+5', () => { router.push('/account') }, { preventDefault: true }, [router])
 
   useEffect(() => {
     // Detects shift+/ as '?' across layouts & browsers.
