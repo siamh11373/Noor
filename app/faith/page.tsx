@@ -18,6 +18,7 @@ import {
   ScoreRing,
 } from '@/components/ui'
 import { TasksForToday } from '@/components/faith/TasksForToday'
+import { PrayerIcon } from '@/components/faith/PrayerIcon'
 import {
   Dialog,
   DialogContent,
@@ -167,13 +168,13 @@ function PrayerButtons() {
               className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center mb-2 border-2 transition-all',
                 prayed
-                  ? 'bg-faith border-faith'
+                  ? 'bg-faith border-faith text-white'
                   : isNext
-                    ? 'border-brand-300'
-                    : 'border-surface-border',
+                    ? 'border-brand-300 text-brand-400'
+                    : 'border-surface-border text-ink-muted',
               )}
             >
-              {prayed && (
+              {prayed ? (
                 <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
                   <path
                     d="M2 6.5l2.5 2.5 5-5"
@@ -186,6 +187,8 @@ function PrayerButtons() {
                     className={isAnimating ? 'noor-check-draw' : undefined}
                   />
                 </svg>
+              ) : (
+                <PrayerIcon prayer={name} className="h-[18px] w-[18px]" />
               )}
             </div>
             <span className={cn('text-[13px] font-semibold mb-0.5', prayed ? 'text-faith-text' : isNext ? 'text-brand-400' : 'text-ink-secondary')}>

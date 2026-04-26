@@ -248,6 +248,26 @@ export function useTimerEngine() {
     if (!anyRunning) restoreTitle(lastTitleRef)
   }, [anyRunning])
 
+  // Watchdog: as soon as a ringing timer leaves 'completed' status (user
+  // dismissed it, switched modes, deleted it, etc.) we stop its loop on
+  // the very next store update — no waiting for the next interval tick.
+  useEffect(() => {
+    const unsubscribe = useSalahStore.subscribe((state, prev) => {
+      if (state.timers === prev.timers) return
+      const liveCompleted = new Set(
+        state.timers.filter((t) => t.status === 'completed' && t.soundEnabled).map((t) => t.id),
+      )
+      for (const id of Array.from(ringingTimers.keys())) {
+        if (!liveCompleted.has(id)) stopRingingLoop(id)
+      }
+    })
+    return () => {
+      unsubscribe()
+      // Cleanup any active loops on unmount (HMR / SPA shell teardown).
+      for (const id of Array.from(ringingTimers.keys())) stopRingingLoop(id)
+    }
+  }, [])
+
   return null
 }
 
@@ -259,12 +279,21 @@ function handlePhaseTransition(prev: TimerState, completedRun: boolean, lastChim
   const curr = useSalahStore.getState().timers.find((t) => t.id === prev.id) ?? prev
 
   if (curr.soundEnabled) {
-    // Debounce chimes so two timers finishing in the same tick don't overlap
-    // harshly.
-    const now = Date.now()
-    if (now - lastChimeAtRef.current > 120) {
-      lastChimeAtRef.current = now
-      playChime()
+    if (completedRun) {
+      // Loop the completion chime until the user explicitly dismisses
+      // (status leaves 'completed') — turns the timer into a real alarm
+      // rather than a one-shot you might miss while context-switching.
+      // Also fires the haptic accent on every iteration on supporting
+      // devices.
+      startRingingLoop(curr.id)
+    } else {
+      // Debounce phase chimes so two timers finishing in the same tick
+      // don't overlap harshly.
+      const now = Date.now()
+      if (now - lastChimeAtRef.current > 120) {
+        lastChimeAtRef.current = now
+        playPhaseChime()
+      }
     }
   }
 
@@ -294,36 +323,153 @@ function labelForMode(t: TimerState): string {
 }
 
 // ─── WEB AUDIO CHIME ─────────────────────────────────────────────────────────
+//
+// Two distinct cadences keyed off `completedRun`:
+//
+//   • playPhaseChime — two-note descending bell (G5 → C5), ~0.55s. Light;
+//     reads as "next segment", not "finished".
+//   • playCompleteChime — ascending C-major arpeggio (C5 → E5 → G5) with
+//     a sustained octave anchor (C6), ~1.4s. The V→I-style resolution +
+//     the held final note triggers the brain's "closure" response —
+//     classic reinforcement cadence for completed work.
+//
+// Each note is a struck-bell voice: a sine fundamental layered with an
+// octave overtone (~25% level) and a triple-frequency shimmer (~8% level),
+// with a 6 ms linear attack and exponential decay. That harmonic stack
+// is what makes the tone read as a *bell* instead of a flat sine beep.
+//
+// All paths are wrapped in try/catch — Safari's webkit prefix, suspended
+// contexts, autoplay restrictions, and missing AudioContext all degrade
+// to silence rather than throwing.
 
 let audioCtx: AudioContext | null = null
-function playChime() {
-  if (typeof window === 'undefined') return
+
+function getCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null
   try {
-    const W = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
+    const W = window as unknown as {
+      AudioContext?: typeof AudioContext
+      webkitAudioContext?: typeof AudioContext
+    }
     const Ctor = W.AudioContext ?? W.webkitAudioContext
-    if (!Ctor) return
+    if (!Ctor) return null
     if (!audioCtx) audioCtx = new Ctor()
     if (audioCtx.state === 'suspended') void audioCtx.resume()
+    return audioCtx
+  } catch {
+    return null
+  }
+}
 
-    const now = audioCtx.currentTime
-    playTone(audioCtx, 880, now, 0.45, 0.18)
-    playTone(audioCtx, 1320, now + 0.12, 0.45, 0.22)
+/**
+ * One struck-bell note. Stacks fundamental + octave overtone + 3×
+ * shimmer through a shared gain envelope so the whole voice rises and
+ * falls together. Gain shape: silence → linear ramp to peak (6ms) →
+ * exponential decay to silence (`duration`s). Linear attack avoids the
+ * click that pure exponential ramps from 0.0001 sometimes produce.
+ */
+function playBell(
+  ctx: AudioContext,
+  freq: number,
+  startAt: number,
+  duration: number,
+  peak: number,
+) {
+  const master = ctx.createGain()
+  master.gain.setValueAtTime(0, startAt)
+  master.gain.linearRampToValueAtTime(peak, startAt + 0.006)
+  master.gain.exponentialRampToValueAtTime(0.0001, startAt + duration)
+  master.connect(ctx.destination)
+
+  const voice = (f: number, level: number) => {
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = f
+    g.gain.value = level
+    osc.connect(g).connect(master)
+    osc.start(startAt)
+    osc.stop(startAt + duration + 0.05)
+  }
+
+  voice(freq, 1)
+  voice(freq * 2, 0.25)
+  voice(freq * 3, 0.08)
+}
+
+/** Tiny "moving on" cue. Descending major third — open, not final. */
+function playPhaseChime() {
+  const ctx = getCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  // G5, then C5 (descending P5). Quick + warm.
+  playBell(ctx, 783.99, t, 0.45, 0.16)
+  playBell(ctx, 523.25, t + 0.14, 0.55, 0.18)
+}
+
+// ─── COMPLETION RINGING LOOP ─────────────────────────────────────────────────
+//
+// On full-run completion the chime repeats every CHIME_LOOP_MS until the
+// timer leaves 'completed' status (e.g. user clicks Dismiss). The interval
+// handles are tracked module-globally so the engine effect's store
+// subscription can stop them immediately without prop-drilling refs.
+//
+// A hard ceiling (`MAX_LOOPS`) prevents a forgotten timer from ringing
+// indefinitely if the dialog is never dismissed (browser tab backgrounded
+// for hours, crashed dismiss handler, etc.) — about 4 minutes of alarms.
+
+const CHIME_LOOP_MS = 2200
+const MAX_LOOPS = 110
+const ringingTimers = new Map<string, { handle: number; count: number }>()
+
+function fireCompletionPulse() {
+  playCompleteChime()
+  try {
+    navigator.vibrate?.([18, 60, 28])
   } catch {
     /* silent */
   }
 }
 
-function playTone(ctx: AudioContext, freq: number, startAt: number, duration: number, peak: number) {
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = 'sine'
-  osc.frequency.value = freq
-  gain.gain.setValueAtTime(0.0001, startAt)
-  gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.02)
-  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration)
-  osc.connect(gain).connect(ctx.destination)
-  osc.start(startAt)
-  osc.stop(startAt + duration + 0.02)
+function startRingingLoop(timerId: string) {
+  if (ringingTimers.has(timerId)) return
+  fireCompletionPulse()
+  const handle = window.setInterval(() => {
+    const entry = ringingTimers.get(timerId)
+    if (!entry) return
+    const live = useSalahStore.getState().timers.find((t) => t.id === timerId)
+    if (!live || live.status !== 'completed' || !live.soundEnabled || entry.count >= MAX_LOOPS) {
+      stopRingingLoop(timerId)
+      return
+    }
+    entry.count += 1
+    fireCompletionPulse()
+  }, CHIME_LOOP_MS)
+  ringingTimers.set(timerId, { handle, count: 1 })
+}
+
+function stopRingingLoop(timerId: string) {
+  const entry = ringingTimers.get(timerId)
+  if (!entry) return
+  window.clearInterval(entry.handle)
+  ringingTimers.delete(timerId)
+}
+
+/** Full-run reinforcement: arpeggio + sustained octave. */
+function playCompleteChime() {
+  const ctx = getCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  // C5 → E5 → G5 ascending (C major triad), then the C6 anchor held
+  // longer so the brain registers the resolution. Peaks scale slightly
+  // up the line so the final note feels like the arrival point.
+  playBell(ctx, 523.25, t + 0.00, 0.55, 0.14)
+  playBell(ctx, 659.25, t + 0.13, 0.55, 0.15)
+  playBell(ctx, 783.99, t + 0.26, 0.65, 0.17)
+  playBell(ctx, 1046.5, t + 0.42, 1.20, 0.22)
+  // Faint sub-octave pad under the anchor for body — barely audible
+  // alone, but it makes the closing note feel grounded rather than thin.
+  playBell(ctx, 261.63, t + 0.42, 1.20, 0.06)
 }
 
 async function fireNotification(title: string, body: string) {
