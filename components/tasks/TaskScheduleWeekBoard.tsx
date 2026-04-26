@@ -91,6 +91,7 @@ function computeDayOrderPatches(
 
 function DayColumn({
   dateKey,
+  dayDate,
   tasks,
   focusedTaskId,
   isToday,
@@ -99,8 +100,10 @@ function DayColumn({
   onOpenDay,
   onOpenTask,
   onToggleTask,
+  onAddTaskForDay,
 }: {
   dateKey: string
+  dayDate: Date
   tasks: CalendarTask[]
   focusedTaskId: string | null
   isToday: boolean
@@ -109,6 +112,7 @@ function DayColumn({
   onOpenDay: () => void
   onOpenTask: (t: CalendarTask) => void
   onToggleTask: (id: string) => void
+  onAddTaskForDay: (d: Date) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayDroppableId(dateKey) })
   const ids = tasks.map((t) => t.id)
@@ -117,7 +121,7 @@ function DayColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex min-w-0 flex-1 flex-col border-l border-surface-border',
+        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-l border-surface-border',
         isToday && 'bg-brand-50/25',
         isOver && 'bg-brand-50/30 dark:bg-brand-950/20',
       )}
@@ -132,7 +136,13 @@ function DayColumn({
         </p>
         <p className={cn('text-[16px] font-semibold', isToday ? 'text-brand-500' : 'text-ink-primary')}>{dayNum}</p>
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1 py-2">
+      <div
+        className="min-h-0 flex-1 cursor-pointer overflow-y-hidden px-1 py-2 transition-colors hover:bg-surface-muted/15"
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('li')) return
+          onAddTaskForDay(dayDate)
+        }}
+      >
         <SortableContext id={dateKey} items={ids} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-1.5">
             {tasks.map((t) => (
@@ -149,7 +159,9 @@ function DayColumn({
           </ul>
         </SortableContext>
         {tasks.length === 0 && (
-          <p className="px-0.5 py-4 text-center text-[10px] leading-snug text-ink-ghost">Drop tasks here</p>
+          <p className="pointer-events-none px-0.5 py-4 text-center text-[10px] leading-snug text-ink-ghost">
+            Drop tasks here · click to add
+          </p>
         )}
       </div>
     </div>
@@ -179,6 +191,7 @@ export function TaskScheduleWeekBoard({
   toggleCalendarTask,
   onFocusTask,
   onOpenDay,
+  onAddTaskForDay,
 }: {
   anchorDate: Date
   tasks: CalendarTask[]
@@ -186,6 +199,7 @@ export function TaskScheduleWeekBoard({
   toggleCalendarTask: (id: string) => void
   onFocusTask: (id: string) => void
   onOpenDay: (d: Date) => void
+  onAddTaskForDay: (d: Date) => void
 }) {
   const weekDates = getWeekDates(anchorDate)
   const today = new Date()
@@ -292,12 +306,12 @@ export function TaskScheduleWeekBoard({
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <p className="shrink-0 border-b border-surface-border px-3 py-2 text-[12px] text-ink-ghost sm:px-4">
-          One column per day — drag tasks between days to reschedule.
+          One column per day — drag between days to reschedule, or click empty space in a day to add a task.
         </p>
-        <div className="flex min-h-0 flex-1 overflow-x-auto">
-          <div className="flex min-w-[720px] flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex h-full min-h-0 min-w-[720px] flex-1 overflow-hidden">
             <div className="w-10 shrink-0" />
             {weekDates.map((d, i) => {
               const dateKey = toDateKey(d)
@@ -308,6 +322,7 @@ export function TaskScheduleWeekBoard({
                 <DayColumn
                   key={dateKey}
                   dateKey={dateKey}
+                  dayDate={d}
                   tasks={colTasks}
                   focusedTaskId={focusedTaskId ?? null}
                   isToday={isSameDay(d, today)}
@@ -316,6 +331,7 @@ export function TaskScheduleWeekBoard({
                   onOpenDay={() => onOpenDay(d)}
                   onOpenTask={(t) => onFocusTask(t.id)}
                   onToggleTask={toggleCalendarTask}
+                  onAddTaskForDay={onAddTaskForDay}
                 />
               )
             })}

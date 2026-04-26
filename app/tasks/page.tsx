@@ -193,13 +193,17 @@ function MonthView({
   tasks,
   onSelectDay,
   onOpenTask,
+  onAddTaskForDay,
   variant = 'time',
 }: {
   date: Date
   tasks: CalendarTask[]
   onSelectDay: (d: Date) => void
-  /** Task mode: open detail panel without leaving month (same as grid task tap). */
-  onOpenTask?: (taskId: string) => void
+  /** Open detail panel without leaving month (same as grid task tap). The
+   *  optional rect lets the panel anchor itself near the clicked chip. */
+  onOpenTask?: (taskId: string, anchorRect?: DOMRect | null) => void
+  /** Click empty cell area to quick-add a task on that day. */
+  onAddTaskForDay?: (d: Date, anchorRect?: DOMRect | null) => void
   variant?: 'time' | 'task'
 }) {
   const today = new Date()
@@ -215,7 +219,12 @@ function MonthView({
   const previewCap = variant === 'task' ? 2 : 3
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className={cn(
+        'flex h-full flex-col',
+        variant === 'task' && 'min-h-0 overflow-hidden',
+      )}
+    >
       <div className="grid grid-cols-7 border-b border-surface-border">
         {dayLabels.map((d) => (
           <div key={d} className="py-2 text-center text-[11px] font-semibold uppercase text-ink-ghost">
@@ -224,7 +233,7 @@ function MonthView({
         ))}
       </div>
 
-      <div className="grid flex-1 grid-cols-7">
+      <div className={cn('grid flex-1 grid-cols-7', variant === 'task' && 'min-h-0 overflow-hidden')}>
         {cells.map((day, i) => {
           if (day === null) return <div key={i} className="border-b border-r border-surface-border bg-surface-muted/30" />
 
@@ -243,17 +252,29 @@ function MonthView({
                 'min-h-[80px] cursor-pointer border-b border-r border-surface-border p-1.5 transition-colors hover:bg-surface-muted/50',
                 isToday && 'bg-brand-50/40',
               )}
-              onClick={() => onSelectDay(cellDate)}
+              onClick={(e) => {
+                if (onAddTaskForDay) onAddTaskForDay(cellDate, e.currentTarget.getBoundingClientRect())
+                else onSelectDay(cellDate)
+              }}
+              title={onAddTaskForDay ? 'Click to add a task · double-click number to open day' : undefined}
             >
               <div className="flex items-center justify-between gap-1">
-                <span
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelectDay(cellDate)
+                  }}
                   className={cn(
-                    'text-[13px] font-medium',
-                    isToday ? 'flex h-7 w-7 items-center justify-center rounded-full bg-brand-400 text-white' : 'text-ink-primary',
+                    'flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-medium transition-colors',
+                    isToday
+                      ? 'bg-brand-400 text-white hover:bg-brand-500'
+                      : 'border border-surface-border text-ink-primary hover:border-brand-400 hover:bg-brand-50/60 hover:text-brand-500',
                   )}
+                  aria-label={`Open ${cellDate.toLocaleDateString()} in day view`}
                 >
                   {day}
-                </span>
+                </button>
                 {variant === 'task' ? (
                   dayTasks.length > 0 ? (
                     <span className="shrink-0 text-[10px] font-medium text-ink-muted">{dayTasks.length}</span>
@@ -270,15 +291,16 @@ function MonthView({
                   const preview = (
                     <span className={cn('truncate', t.completed && 'line-through opacity-40')}>{t.title}</span>
                   )
-                  if (variant === 'task' && onOpenTask) {
+                  if (onOpenTask) {
                     return (
                       <button
                         key={t.id}
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          onOpenTask(t.id)
+                          onOpenTask(t.id, e.currentTarget.getBoundingClientRect())
                         }}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className={cn(
                           'block w-full truncate rounded px-1.5 py-0.5 text-left text-[10px] transition-opacity hover:opacity-90',
                           colors.bg,
@@ -345,6 +367,22 @@ export default function TasksPage() {
   })
   const [weekPrayerTimes, setWeekPrayerTimes] = useState<Record<string, PrayerTime[]>>({})
 
+  // Lock window scroll only while the tasks page is mounted: the page is
+  // sized to the viewport and shouldn't drive a document-level scroll. Other
+  // pages keep their normal scrolling.
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [])
+
   const computeWeekPrayers = useCallback(
     async (centerDate: Date) => {
       let lat = settings.location.lat
@@ -385,7 +423,19 @@ export default function TasksPage() {
   }, [computeWeekPrayers, selectedDate])
 
   const [dayPanelTaskId, setDayPanelTaskId] = useState<string | null>(null)
+  /** Rect of the click that created a new task; used to anchor the panel
+   *  near where the user clicked when there's no rendered task chip yet
+   *  (e.g. clicking an empty month cell). */
+  const [addTaskAnchorRect, setAddTaskAnchorRect] = useState<DOMRect | null>(null)
   const [suppressTaskPanelForDrag, setSuppressTaskPanelForDrag] = useState(false)
+  /** Mirrors `TaskDayPanel`'s internal dirty state via `onDirtyChange`. The
+   *  page uses it to decide whether a calendar-surface click should discard
+   *  the open task (panel was a blank stub) or relocate it (user typed /
+   *  patched something). Reset when `dayPanelTaskId` changes. */
+  const [panelDirty, setPanelDirty] = useState(false)
+  useEffect(() => {
+    setPanelDirty(false)
+  }, [dayPanelTaskId])
 
   useEffect(() => {
     if (view !== 'day' && view !== 'week') {
@@ -472,13 +522,68 @@ export default function TasksPage() {
     })
   }
 
+  /* ───────────────────────── Panel dispatchers ─────────────────────────
+     The "click anywhere on the calendar" UX has three cases:
+       1. No panel open → just create the new task / open the chip.
+       2. Panel open and clean (untouched stub) → discard it first, then
+          create / switch.
+       3. Panel open and dirty (user typed or patched something) → for an
+          empty-slot click, *relocate* the existing task to the new slot
+          instead of creating a duplicate; for a chip click, the typed
+          changes are already auto-saved on input blur, so just switch
+          panels.
+     `dispatchCalendarSlotClick` covers (1)/(2)/(3) for empty slot taps.
+     `dispatchOpenTask` covers them for chip taps. Outside-calendar clicks
+     bypass both and the panel stays open (see TaskDayPanel — its old
+     outside-click auto-close was removed for this reason).                */
+
+  const dispatchCalendarSlotClick = useCallback(
+    (date: string, startTime: string, anchorRect?: DOMRect | null) => {
+      if (dayPanelTaskId) {
+        const masterId = calendarTaskMasterId(dayPanelTaskId)
+        if (panelDirty) {
+          updateCalendarTask(masterId, { date, startTime })
+          setAddTaskAnchorRect(anchorRect ?? null)
+          return
+        }
+        deleteCalendarTask(masterId)
+        setDayPanelTaskId(null)
+      }
+      const id = addCalendarTask({
+        title: '(No title)',
+        date,
+        startTime,
+        duration: 60,
+        pillar: 'career',
+        completed: false,
+      })
+      setAddTaskAnchorRect(anchorRect ?? null)
+      setDayPanelTaskId(id)
+    },
+    [dayPanelTaskId, panelDirty, addCalendarTask, updateCalendarTask, deleteCalendarTask],
+  )
+
+  const dispatchOpenTask = useCallback(
+    (id: string | null, anchorRect?: DOMRect | null) => {
+      if (id == null) {
+        setDayPanelTaskId(null)
+        return
+      }
+      if (dayPanelTaskId && dayPanelTaskId !== id && !panelDirty) {
+        const prevMasterId = calendarTaskMasterId(dayPanelTaskId)
+        const targetMasterId = calendarTaskMasterId(id)
+        // Don't delete the same master that's about to be opened — clicking
+        // a different occurrence of the current series shouldn't nuke it.
+        if (prevMasterId !== targetMasterId) deleteCalendarTask(prevMasterId)
+      }
+      setAddTaskAnchorRect(anchorRect ?? null)
+      setDayPanelTaskId(id)
+    },
+    [dayPanelTaskId, panelDirty, deleteCalendarTask],
+  )
+
   function handleCreateTask(date: string, time: string) {
-    setPopover({
-      type: 'create',
-      date,
-      time,
-      position: { top: 100, left: 100 },
-    })
+    dispatchCalendarSlotClick(date, time)
   }
 
   function handleSelectDay(d: Date) {
@@ -551,6 +656,51 @@ export default function TasksPage() {
       minutesToTime(Math.floor(new Date().getHours()) * 60 + 30),
     )
   }
+
+  const handleAddTaskForDay = useCallback(
+    (day: Date, anchorRect?: DOMRect | null) => {
+      const dateKey = toDateKey(day)
+      const dayTasks = calendarTasks.filter((t) => t.date === dateKey)
+      const startTime = nextStartForAppend(dayTasks)
+      dispatchCalendarSlotClick(dateKey, startTime, anchorRect ?? null)
+    },
+    [calendarTasks, dispatchCalendarSlotClick],
+  )
+
+  // Drop the captured click anchor whenever the panel closes so the next
+  // task open (e.g. tapping a chip) goes back to anchoring on the chip.
+  useEffect(() => {
+    if (!dayPanelTaskId) setAddTaskAnchorRect(null)
+  }, [dayPanelTaskId])
+
+  // Outside-calendar click on a clean stub → discard it.
+  //
+  // Calendar-surface clicks (grid, chip, month cell) are routed through the
+  // dispatchers above, which already discard clean stubs and create/switch.
+  // This effect handles the *other* case: if the open task is an empty stub
+  // and the user clicks anything outside both the panel and the calendar
+  // surface (sidebar, top nav, rail, header, etc.), the stub should vanish
+  // — leaving stale "(No title)" rows behind feels broken. Dirty tasks are
+  // preserved on outside-calendar clicks so the user doesn't lose typed work.
+  useEffect(() => {
+    if (!dayPanelTaskId || panelDirty) return
+    const openId = dayPanelTaskId
+    function onDocDown(e: MouseEvent) {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[data-task-day-panel]')) return
+      if (target.closest('[data-calendar-surface]')) return
+      // Recurrence-end-date popover renders in a portal outside the panel
+      // root; treat it as part of the panel so picking a date doesn't
+      // self-discard the very task being edited.
+      if (target.closest('[data-recurrence-date-popover]')) return
+      const masterId = calendarTaskMasterId(openId)
+      deleteCalendarTask(masterId)
+      setDayPanelTaskId(null)
+    }
+    document.addEventListener('mousedown', onDocDown)
+    return () => document.removeEventListener('mousedown', onDocDown)
+  }, [dayPanelTaskId, panelDirty, deleteCalendarTask])
 
   useTasksShortcuts({
     view,
@@ -718,14 +868,15 @@ export default function TasksPage() {
           <TasksLeftRail variant="sidebar" {...railProps} mountMonthFocus={lgUp} />
         </div>
 
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-surface-border bg-surface-card pb-4">
+        <div data-calendar-surface className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-surface-border bg-surface-card pb-4">
         {scheduleMode === 'time' && view === 'day' && (
           <DayCalendarView
             date={selectedDate}
             tasks={displayCalendarTasks}
             prayerTimes={weekPrayerTimes[toDateKey(selectedDate)] ?? prayerTimes}
             focusedTaskId={dayPanelTaskId}
-            onFocusedTaskIdChange={setDayPanelTaskId}
+            onFocusedTaskIdChange={(id) => dispatchOpenTask(id)}
+            onGridCreate={dispatchCalendarSlotClick}
             addCalendarTask={addCalendarTask}
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
@@ -738,7 +889,8 @@ export default function TasksPage() {
             tasks={displayCalendarTasks}
             prayerTimesByDate={weekPrayerTimes}
             focusedTaskId={dayPanelTaskId}
-            onFocusedTaskIdChange={setDayPanelTaskId}
+            onFocusedTaskIdChange={(id) => dispatchOpenTask(id)}
+            onGridCreate={dispatchCalendarSlotClick}
             addCalendarTask={addCalendarTask}
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
@@ -747,7 +899,14 @@ export default function TasksPage() {
           />
         )}
         {scheduleMode === 'time' && view === 'month' && (
-          <MonthView date={selectedDate} tasks={displayCalendarTasks} variant="time" onSelectDay={handleSelectDay} />
+          <MonthView
+            date={selectedDate}
+            tasks={displayCalendarTasks}
+            variant="time"
+            onSelectDay={handleSelectDay}
+            onOpenTask={(id, rect) => dispatchOpenTask(id, rect)}
+            onAddTaskForDay={handleAddTaskForDay}
+          />
         )}
 
         {scheduleMode === 'task' && view === 'day' && (
@@ -758,7 +917,7 @@ export default function TasksPage() {
             focusedTaskId={dayPanelTaskId}
             updateCalendarTask={updateCalendarTask}
             toggleCalendarTask={toggleCalendarTask}
-            onFocusTask={setDayPanelTaskId}
+            onFocusTask={(id) => dispatchOpenTask(id)}
           />
         )}
         {scheduleMode === 'task' && view === 'week' && (
@@ -767,8 +926,9 @@ export default function TasksPage() {
             tasks={displayCalendarTasks}
             focusedTaskId={dayPanelTaskId}
             toggleCalendarTask={toggleCalendarTask}
-            onFocusTask={setDayPanelTaskId}
+            onFocusTask={(id) => dispatchOpenTask(id)}
             onOpenDay={handleSelectDay}
+            onAddTaskForDay={handleAddTaskForDay}
           />
         )}
         {scheduleMode === 'task' && view === 'month' && (
@@ -777,13 +937,14 @@ export default function TasksPage() {
             tasks={displayCalendarTasks}
             variant="task"
             onSelectDay={handleSelectDay}
-            onOpenTask={setDayPanelTaskId}
+            onOpenTask={(id, rect) => dispatchOpenTask(id, rect)}
+            onAddTaskForDay={handleAddTaskForDay}
           />
         )}
         </div>
       </div>
 
-      {(view === 'day' || view === 'week' || (scheduleMode === 'task' && view === 'month')) &&
+      {(view === 'day' || view === 'week' || view === 'month') &&
         dayPanelTaskId &&
         !suppressTaskPanelForDrag &&
         (() => {
@@ -806,6 +967,7 @@ export default function TasksPage() {
             <TaskDayPanel
               key={dayPanelTaskId}
               task={panelTask}
+              fallbackAnchorRect={addTaskAnchorRect}
               weekdayDateLabel={weekdayDateLabel}
               recurrenceAnchorDateKey={master.date}
               onPatch={(patch) => updateCalendarTask(masterId, patch)}
@@ -814,6 +976,7 @@ export default function TasksPage() {
                 setDayPanelTaskId(null)
               }}
               onClose={() => setDayPanelTaskId(null)}
+              onDirtyChange={setPanelDirty}
             />
           )
         })()}

@@ -16,6 +16,7 @@ export function DayCalendarView({
   updateCalendarTask,
   toggleCalendarTask,
   onTimeBlockDragSessionChange,
+  onGridCreate,
 }: {
   date: Date
   tasks: CalendarTask[]
@@ -26,6 +27,7 @@ export function DayCalendarView({
   updateCalendarTask: (id: string, patch: Partial<Omit<CalendarTask, 'id'>>) => void
   toggleCalendarTask: (id: string) => void
   onTimeBlockDragSessionChange?: (active: boolean) => void
+  onGridCreate?: (date: string, time: string, anchorRect: DOMRect | null) => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const dateStr = toDateKey(date)
@@ -66,6 +68,7 @@ export function DayCalendarView({
         updateCalendarTask={updateCalendarTask}
         toggleCalendarTask={toggleCalendarTask}
         onTimeBlockDragSessionChange={onTimeBlockDragSessionChange}
+        onGridCreate={onGridCreate}
       />
     </div>
   )

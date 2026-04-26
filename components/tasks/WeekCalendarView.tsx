@@ -34,6 +34,7 @@ export function WeekCalendarView({
   toggleCalendarTask,
   onOpenDay,
   onTimeBlockDragSessionChange,
+  onGridCreate,
 }: {
   anchorDate: Date
   tasks: CalendarTask[]
@@ -45,6 +46,7 @@ export function WeekCalendarView({
   toggleCalendarTask: (id: string) => void
   onOpenDay: (d: Date) => void
   onTimeBlockDragSessionChange?: (active: boolean) => void
+  onGridCreate?: (date: string, time: string, anchorRect: DOMRect | null) => void
 }) {
   const weekDates = getWeekDates(anchorDate)
   const today = new Date()
@@ -156,6 +158,7 @@ export function WeekCalendarView({
                   weekDragPreview={weekDragPreview}
                   setWeekDragPreview={setWeekDragPreview}
                   onTimeBlockDragSessionChange={onTimeBlockDragSessionChange}
+                  onGridCreate={onGridCreate}
                 />
               </div>
             )
