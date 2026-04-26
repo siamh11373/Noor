@@ -56,12 +56,12 @@ export function TopNav() {
           <Image
             src="/logo.png"
             alt=""
-            width={64}
-            height={64}
-            className="h-14 w-14 shrink-0 rounded-full sm:h-16 sm:w-16"
-            sizes="(max-width: 640px) 56px, 64px"
+            width={80}
+            height={80}
+            className="h-16 w-16 shrink-0 rounded-full sm:h-20 sm:w-20"
+            sizes="(max-width: 640px) 64px, 80px"
           />
-          <p className="hidden text-[22px] font-semibold tracking-tight text-ink-primary sm:block">
+          <p className="hidden text-[26px] font-semibold tracking-tight text-ink-primary sm:block">
             Noor
           </p>
         </Link>

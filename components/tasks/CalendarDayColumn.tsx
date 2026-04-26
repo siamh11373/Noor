@@ -22,6 +22,7 @@ import {
 } from '@/lib/tasks-calendar'
 import { hasActiveRecurrence } from '@/lib/task-recurrence'
 import { buildPrayerTimelineGradientImage } from '@/lib/prayer-sections'
+import { computeOverlapLayout, type OverlapSlot } from '@/lib/task-overlap-layout'
 import { cn } from '@/lib/utils'
 import { CompletionCheckbox } from '@/components/ui/CompletionCheckbox'
 import type { CalendarTask, PrayerTime } from '@/types'
@@ -75,6 +76,7 @@ export function CalendarDayColumn({
   setWeekDragPreview,
   /** While true, parent may hide the task detail panel so it does not overlap the drag. */
   onTimeBlockDragSessionChange,
+  onGridCreate,
 }: {
   variant: CalendarDayColumnVariant
   dateStr: string
@@ -91,6 +93,10 @@ export function CalendarDayColumn({
   weekDragPreview?: WeekDragPreview | null
   setWeekDragPreview?: (v: WeekDragPreview | null) => void
   onTimeBlockDragSessionChange?: (active: boolean) => void
+  /** When provided, grid clicks delegate task creation to the parent (which
+   *  routes through `dispatchCalendarSlotClick` to handle dirty-stub
+   *  discard/relocate). When omitted, falls back to legacy inline create. */
+  onGridCreate?: (date: string, time: string, anchorRect: DOMRect | null) => void
 }) {
   const onTimeBlockDragSessionChangeRef = useRef(onTimeBlockDragSessionChange)
   onTimeBlockDragSessionChangeRef.current = onTimeBlockDragSessionChange
@@ -109,6 +115,7 @@ export function CalendarDayColumn({
   const dragRef = useRef<{
     taskId: string
     pointerId: number
+    originX: number
     originY: number
     mode: 'pending-move' | 'move' | 'resize-top' | 'resize-bottom'
     initialStartMins: number
@@ -200,17 +207,22 @@ export function CalendarDayColumn({
       const minuteOffset = (y / HOUR_HEIGHT) * 60 + DAY_START_MINUTES
       const snapped = snapMinutesFloor(minuteOffset)
       const startMins = Math.min(Math.max(snapped, DAY_START_MINUTES), DAY_END_MINUTES - DEFAULT_NEW_TASK_MINUTES)
+      const startTime = minutesToTime(startMins)
+      if (onGridCreate) {
+        onGridCreate(dateStr, startTime, e.currentTarget.getBoundingClientRect())
+        return
+      }
       const id = addCalendarTask({
         title: INSTANT_TITLE,
         date: dateStr,
-        startTime: minutesToTime(startMins),
+        startTime,
         duration: DEFAULT_NEW_TASK_MINUTES,
         pillar: 'career',
         completed: false,
       })
       onFocusedTaskIdChange(id)
     },
-    [addCalendarTask, dateStr, onFocusedTaskIdChange, scrollParentRef],
+    [addCalendarTask, dateStr, onFocusedTaskIdChange, onGridCreate, scrollParentRef],
   )
 
   const attachDragListeners = useCallback(() => {
@@ -224,7 +236,14 @@ export function CalendarDayColumn({
       const deltaMins = (dy / HOUR_HEIGHT) * 60
 
       if (d.mode === 'pending-move') {
-        if (Math.abs(ev.clientY - d.originY) < DRAG_THRESHOLD_PX) return
+        // Use Euclidean distance instead of vertical-only so a purely
+        // horizontal drag (moving a task to the next/previous day in
+        // week view) crosses the threshold immediately. Previously this
+        // only checked `clientY`, so users had to also nudge vertically
+        // before the drag would start — the column-change felt sticky.
+        const dxPx = ev.clientX - d.originX
+        const dyPx = ev.clientY - d.originY
+        if (Math.hypot(dxPx, dyPx) < DRAG_THRESHOLD_PX) return
         d.mode = 'move'
         document.body.style.cursor = 'grabbing'
         onTimeBlockDragSessionChangeRef.current?.(true)
@@ -370,6 +389,7 @@ export function CalendarDayColumn({
     dragRef.current = {
       taskId: task.id,
       pointerId: e.pointerId,
+      originX: e.clientX,
       originY: e.clientY,
       mode: 'pending-move',
       initialStartMins,
@@ -386,6 +406,7 @@ export function CalendarDayColumn({
     dragRef.current = {
       taskId: task.id,
       pointerId: e.pointerId,
+      originX: e.clientX,
       originY: e.clientY,
       mode: 'resize-top',
       initialStartMins: timeToMinutes(t0.startTime),
@@ -404,6 +425,7 @@ export function CalendarDayColumn({
     dragRef.current = {
       taskId: task.id,
       pointerId: e.pointerId,
+      originX: e.clientX,
       originY: e.clientY,
       mode: 'resize-bottom',
       initialStartMins: timeToMinutes(t0.startTime),
@@ -443,6 +465,62 @@ export function CalendarDayColumn({
     if (!moved) return null
     return origin
   }, [variant, liveOverride, tasks, dateStr])
+
+  /** Special id used to feed the week drag-origin "holo" ghost into the
+   *  overlap layout so it occupies its own lane alongside the other tasks. */
+  const WEEK_DRAG_GHOST_LAYOUT_ID = '__noor-week-drag-ghost__'
+
+  /** Lane / column / colSpan per task id for this column's events. Computed
+   *  from the same merged task list that gets rendered, so dragging an
+   *  event into a new time updates lanes live. */
+  const overlapLayout = useMemo(() => {
+    const events = dayTasks.map((t) => {
+      const merged = liveOverride?.id === t.id ? mergePreview(t, liveOverride) : t
+      const startMin = timeToMinutes(merged.startTime)
+      return { id: t.id, startMin, endMin: startMin + merged.duration }
+    })
+    if (weekDragGhost) {
+      const startMin = timeToMinutes(weekDragGhost.startTime)
+      events.push({
+        id: WEEK_DRAG_GHOST_LAYOUT_ID,
+        startMin,
+        endMin: startMin + weekDragGhost.duration,
+      })
+    }
+    return computeOverlapLayout(events)
+  }, [dayTasks, liveOverride, weekDragGhost])
+
+  /** Inline left / width / right styles for an event given its slot. The
+   *  events area inside the column is `inset-x-0.5` for week (2px gutter
+   *  each side) or `left-[72px] right-2` for day. We express the slot
+   *  geometry as percentages of that area, with a 2px inter-lane gap so
+   *  adjacent lanes do not touch. */
+  const eventGeomStyle = (slot: OverlapSlot | undefined) => {
+    const lane = slot?.lane ?? 0
+    const columns = slot?.columns ?? 1
+    const colSpan = slot?.colSpan ?? 1
+    const leftFrac = lane / columns
+    const widthFrac = colSpan / columns
+    const isFullWidth = leftFrac === 0 && widthFrac === 1
+    // Inter-lane gap (subtracted from a non-full-width slot's width).
+    const gap = 2
+    if (isWeek) {
+      // Events area: inset-x-0.5 -> 2px on each side -> 4px total reserved.
+      return {
+        left: `calc(2px + ${leftFrac} * (100% - 4px))`,
+        width: isFullWidth
+          ? 'calc(100% - 4px)'
+          : `calc(${widthFrac} * (100% - 4px) - ${gap}px)`,
+      } as const
+    }
+    // Day variant: 72px left gutter for time labels, 8px right gutter -> 80px reserved.
+    return {
+      left: `calc(72px + ${leftFrac} * (100% - 80px))`,
+      width: isFullWidth
+        ? 'calc(100% - 80px)'
+        : `calc(${widthFrac} * (100% - 80px) - ${gap}px)`,
+    } as const
+  }
 
   const inner = (
     <div className="relative" style={{ height: totalGridHeight }}>
@@ -511,19 +589,20 @@ export function CalendarDayColumn({
           const height = Math.max((g.duration / 60) * HOUR_HEIGHT, isWeek ? 20 : 22)
           const colors = TASK_PILLAR_STYLES[g.pillar]
           const titleShow = g.title.trim() === '' || g.title === INSTANT_TITLE ? INSTANT_TITLE : g.title
+          const ghostGeom = eventGeomStyle(overlapLayout.get(WEEK_DRAG_GHOST_LAYOUT_ID))
           return (
             <div
               key={`${g.id}-week-holo`}
               aria-hidden
               className={cn(
                 'pointer-events-none absolute z-[40] flex flex-col overflow-hidden rounded-lg border border-dashed px-0',
-                isWeek ? 'inset-x-0.5 text-[10px]' : 'left-[72px] right-2',
+                isWeek ? 'text-[10px]' : '',
                 colors.bg,
                 colors.border,
                 g.completed && 'opacity-40',
                 'opacity-[0.48] shadow-none saturate-[0.85]',
               )}
-              style={{ top: Math.max(top, 0), height }}
+              style={{ top: Math.max(top, 0), height, ...ghostGeom }}
             >
               <div className="h-1.5 shrink-0" />
               <div className="min-h-0 flex-1 select-none px-2 py-0.5">
@@ -567,12 +646,13 @@ export function CalendarDayColumn({
         const titleShow = disp.title.trim() === '' || disp.title === INSTANT_TITLE ? INSTANT_TITLE : disp.title
         const isLiveWeekDrag = isWeek && liveOverride?.id === task.id
 
+        const taskGeom = eventGeomStyle(overlapLayout.get(task.id))
         return (
           <div
             key={task.id}
             className={cn(
               'absolute flex flex-col overflow-hidden rounded-lg border px-0 transition-shadow duration-150',
-              isWeek ? 'inset-x-0.5 text-[10px]' : 'left-[72px] right-2',
+              isWeek ? 'text-[10px]' : '',
               colors.bg,
               colors.border,
               disp.completed && 'opacity-50',
@@ -582,7 +662,7 @@ export function CalendarDayColumn({
                   ? 'z-[40] shadow-lg ring-1 ring-brand-400/30'
                   : 'z-[32] hover:shadow-card-hover',
             )}
-            style={{ top: Math.max(top, 0), height }}
+            style={{ top: Math.max(top, 0), height, ...taskGeom }}
             data-task-block
             data-task-panel-anchor={task.id}
             onClick={(e) => e.stopPropagation()}
